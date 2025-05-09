@@ -78,9 +78,6 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: List dist directory contents
-        run: ls -al dist/
-
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
         with:
