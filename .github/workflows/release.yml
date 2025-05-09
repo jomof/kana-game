@@ -51,9 +51,9 @@ jobs:
           
       - name: Install Playwright dependencies
         run: sudo npx playwright install-deps  
-         
+
       - name: Install Playwright browsers
-        run: npx playwright -D install
+        run: npx playwright install
 
       - name: Run tests
         run: npm test
