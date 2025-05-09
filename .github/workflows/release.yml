@@ -47,11 +47,9 @@ jobs:
             libhyphen0 \
             libmanette-0.2-0 \
             libgles2 \
-            libgstreamer-plugins-bad1.0-0 \ 
-            gstreamer1.0-libav
-        
+           
       - name: Install Playwright browsers
-        run: npx playwright install
+        run: npx playwright -D install
 
       - name: Run tests
         run: npm test
