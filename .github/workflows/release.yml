@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Build and Release kana-game.js
 
 on:
   push:
@@ -78,12 +78,12 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Create GitHub Release
+      - name: List dist directory contents
+        run: ls -al dist/
+
+      - name: Upload release assets
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+          files: path/to/your/asset.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
