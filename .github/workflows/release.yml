@@ -47,7 +47,6 @@ jobs:
             libhyphen0 \
             libmanette-0.2-0 \
             libgles2 \
-           
           
       - name: Install Playwright dependencies
         run: sudo npx playwright install-deps  
