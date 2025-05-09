@@ -46,7 +46,9 @@ jobs:
             libsecret-1-0 \
             libhyphen0 \
             libmanette-0.2-0 \
-            libgles2
+            libgles2 \
+            libgstreamer-plugins-bad1.0-0 \ 
+            gstreamer1.0-libav
         
       - name: Install Playwright browsers
         run: npx playwright install
