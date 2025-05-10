@@ -1,11 +1,12 @@
 /**
  * @license
- * Copyright 2019 Google LLC
+ * Copyright 2019 
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 import {LitElement, html, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
+import * as wanakana from 'wanakana';
 
 /**
  * An example element.
@@ -37,6 +38,13 @@ export class KanaGame extends LitElement {
   @property({type: Number})
   count = 0;
 
+  override firstUpdated() {
+    const input = this.shadowRoot?.getElementById('kana-input') as HTMLInputElement;
+    if (input) {
+      wanakana.bind(input, { IMEMode: true });
+    }
+  }
+
   override render() {
     return html`
       <h1>${this.sayHello(this.name)}!</h1>
@@ -44,6 +52,7 @@ export class KanaGame extends LitElement {
         Click Count: ${this.count}
       </button>
       <slot></slot>
+      <input id="kana-input" type="text" placeholder="Type in romaji..." />
     `;
   }
 
