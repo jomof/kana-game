@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "clean": "rimraf kana-game.{d.ts,d.ts.map,js,js.map} test/kana-game.{d.ts,d.ts.map,js,js.map} test/kana-game_test.{d.ts,d.ts.map,js,js.map}",
+    "clean": "rimraf kana-game-latest/ test/kana-game.{d.ts,d.ts.map,js,js.map} test/kana-game_test.{d.ts,d.ts.map,js,js.map}",
     "lint": "npm run lint:lit-analyzer && npm run lint:eslint",
     "lint:eslint": "eslint 'src/**/*.ts'",
     "lint:lit-analyzer": "lit-analyzer",

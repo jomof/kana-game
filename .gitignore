@@ -3,9 +3,4 @@
 /test/
 custom-elements.json
 # top level source
-kana-game.js
-kana-game.js.map
-kana-game.d.ts
-kana-game.d.ts.map
-# only generated for size check
-kana-game.bundled.js
+kana-game-latest/
