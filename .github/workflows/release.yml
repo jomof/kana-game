@@ -80,14 +80,17 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: List files
+        run: ls -la ./kana-game-latest
+
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            kana-game.d.ts 
-            kana-game.d.ts.map 
-            kana-game.js 
-            kana-game.js.map
+            kana-game-latest/kana-game.d.ts 
+            kana-game-latest/kana-game.d.ts.map 
+            kana-game-latest/kana-game.js 
+            kana-game-latest/kana-game.js.map
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
