@@ -90,3 +90,14 @@ jobs:
             kana-game.js.map
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./kana-game-latest
+          files: |
+            kana-game.d.ts 
+            kana-game.d.ts.map 
+            kana-game.js 
+            kana-game.js.map

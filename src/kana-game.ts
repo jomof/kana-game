@@ -15,7 +15,7 @@ import {customElement, property} from 'lit/decorators.js';
  * @csspart button - The button
  */
 @customElement('kana-game')
-export class MyElement extends LitElement {
+export class KanaGame extends LitElement {
   static override styles = css`
     :host {
       display: block;
@@ -63,6 +63,6 @@ export class MyElement extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'kana-game': MyElement;
+    'kana-game': KanaGame;
   }
 }

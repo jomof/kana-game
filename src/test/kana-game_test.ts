@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {MyElement} from '../kana-game.js';
+import {KanaGame} from '../kana-game.js';
 
 import {fixture, assert} from '@open-wc/testing';
 import {html} from 'lit/static-html.js';
@@ -12,7 +12,7 @@ import {html} from 'lit/static-html.js';
 suite('kana-game', () => {
   test('is defined', () => {
     const el = document.createElement('kana-game');
-    assert.instanceOf(el, MyElement);
+    assert.instanceOf(el, KanaGame);
   });
 
   test('renders with default values', async () => {
@@ -40,7 +40,7 @@ suite('kana-game', () => {
   });
 
   test('handles a click', async () => {
-    const el = (await fixture(html`<kana-game></kana-game>`)) as MyElement;
+    const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
     const button = el.shadowRoot!.querySelector('button')!;
     button.click();
     await el.updateComplete;
@@ -55,7 +55,7 @@ suite('kana-game', () => {
   });
 
   test('styling applied', async () => {
-    const el = (await fixture(html`<kana-game></kana-game>`)) as MyElement;
+    const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
     await el.updateComplete;
     assert.equal(getComputedStyle(el).paddingTop, '16px');
   });
