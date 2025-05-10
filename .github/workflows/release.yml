@@ -24,7 +24,7 @@ jobs:
         run: npm ci
 
       - name: Setup Dev Environment
-        run: setup-dev.sh
+        run: ./setup-dev.sh
 
       - name: Lint code
         run: npm run lint
