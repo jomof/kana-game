@@ -1,0 +1,14 @@
+{
+  "name": "kana-game-dev",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:0-18",
+  "forwardPorts": [3000, 8000],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "postCreateCommand": "setup-dev.sh"
+}

@@ -23,38 +23,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup Dev Environment
+        run: setup.dev.sh
+
       - name: Lint code
         run: npm run lint
 
       - name: Build project
         run: npm run build
-
-      - name: Install required system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-4-1 \
-            libgraphene-1.0-0 \
-            libwoff1 \
-            libvpx9 \
-            libevent-2.1-7 \
-            libopus0 \
-            libgstreamer1.0-0 \
-            libgstreamer-plugins-base1.0-0 \
-            libgstreamer-plugins-good1.0-0 \
-            libflite1 \
-            libavif16 \
-            libharfbuzz-icu0 \
-            libsecret-1-0 \
-            libhyphen0 \
-            libmanette-0.2-0 \
-            libgles2 \
-          
-      - name: Install Playwright dependencies
-        run: sudo npx playwright install-deps  
-
-      - name: Install Playwright browsers
-        run: npx playwright install
 
       - name: Run tests
         run: npm test
