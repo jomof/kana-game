@@ -2,6 +2,7 @@
 /lib/
 /test/
 custom-elements.json
+setup-dev.log
 # top level source
 kana-game.js
 kana-game.js.map
