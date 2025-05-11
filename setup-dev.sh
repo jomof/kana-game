@@ -21,4 +21,5 @@ sudo apt-get install -y \
     libgles2
 echo npx playwright install---------------------------------------------
 sudo npx playwright install
+sudo npx playwright install
 
