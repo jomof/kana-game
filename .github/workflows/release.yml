@@ -28,6 +28,9 @@ jobs:
       
       - name: Instal playwright
         run: npx playwright install
+        
+      - name: Instal playwright-deps
+        run: npx playwright install-deps
 
       - name: Lint code
         run: npm run lint
