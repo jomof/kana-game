@@ -1,5 +1,7 @@
-sudo npm ci
 sudo apt-get update
+sudo npm ci
+sudo npx playwright install-deps 
+sudo npx playwright install
 sudo apt-get install -y \
     libgtk-4-1 \
     libgraphene-1.0-0 \
@@ -17,5 +19,3 @@ sudo apt-get install -y \
     libhyphen0 \
     libmanette-0.2-0 \
     libgles2
-sudo npx playwright install-deps 
-sudo npx playwright install
