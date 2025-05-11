@@ -12,5 +12,5 @@
       ]
     }
   },
-  "postCreateCommand": "./setup-dev.sh && npx playwright install"
+  "postCreateCommand": "./setup-dev.sh && npx playwright install && npx playwright install-deps"
 }
