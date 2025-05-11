@@ -25,6 +25,9 @@ jobs:
 
       - name: Setup Dev Environment
         run: ./setup-dev.sh
+      
+      - name: Instal playwright
+        run: npx playwright install
 
       - name: Lint code
         run: npm run lint

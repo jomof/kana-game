@@ -2,8 +2,6 @@ echo apt-get update-----------------------------------------------------
 sudo apt-get update
 echo npm ci-------------------------------------------------------------
 sudo npm ci
-echo npx playwright install-deps----------------------------------------
-sudo npx playwright install-deps
 echo apt-get install----------------------------------------------------
 sudo apt-get install -y \
     libgtk-4-1 \
@@ -19,7 +17,5 @@ sudo apt-get install -y \
     libhyphen0 \
     libmanette-0.2-0 \
     libgles2
-echo npx playwright install---------------------------------------------
-sudo npx playwright install
-sudo npx playwright install
+
 
