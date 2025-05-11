@@ -1,14 +1,16 @@
 {
   "name": "kana-game-dev",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:0-18",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:18",
   "forwardPorts": [3000, 8000],
   "customizations": {
     "vscode": {
       "extensions": [
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "runem.lit-plugin",
+        "github.vscode-github-actions"
       ]
     }
   },
-  "postCreateCommand": "setup-dev.sh"
+  "postCreateCommand": "./setup-dev.sh"
 }

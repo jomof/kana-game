@@ -1,3 +1,4 @@
+sudo npm ci
 sudo apt-get update
 sudo apt-get install -y \
     libgtk-4-1 \
@@ -17,4 +18,4 @@ sudo apt-get install -y \
     libmanette-0.2-0 \
     libgles2
 sudo npx playwright install-deps 
-npx playwright install
+sudo npx playwright install
