@@ -76,10 +76,21 @@ suite('kana-game', () => {
     );
   });
 
-  test('styling applied', async () => {
-    const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
+    test('handles a click', async () => {
+    const el = await getElement();
+    const button = el.shadowRoot!.querySelector('button')!;
+    button.click();
     await el.updateComplete;
-    assert.equal(getComputedStyle(el).paddingTop, '16px');
+    assert.shadowDom.equal(
+      el,
+      getExpectedHtml(1)
+    );
+  });
+
+  test('notifies Mecab', async () => {
+    const el = await fixture(html`<kana-game></kana-game>`) as KanaGame;
+    await el.updateComplete;
+    assert.equal(el.mecabInitialized, true);
   });
 
   test('converts romaji input to kana using WanaKana', async () => {

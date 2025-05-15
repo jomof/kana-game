@@ -7,6 +7,7 @@
 import {LitElement, html, css} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import * as wanakana from 'wanakana';
+import Mecab from 'mecab-wasm';
 
 /**
  * An example element.
@@ -38,11 +39,29 @@ export class KanaGame extends LitElement {
   @property({type: Number})
   count = 0;
 
+  /**
+   * Whether mecab has been initialized.
+   */
+  @property({type: Boolean})
+  mecabInitialized = false;
+
   override firstUpdated() {
     const input = this.shadowRoot?.getElementById('kana-input') as HTMLInputElement;
     if (input) {
       wanakana.bind(input, { IMEMode: true });
     }
+    
+  }
+
+  protected override async getUpdateComplete(): Promise<boolean> {
+    var result = await super.getUpdateComplete();
+    if (result) {
+      await Mecab.waitReady();
+      this._onMecabReady();
+      var mc = Mecab.query('日本語を勉強しています。');
+      console.log("MECABX" + mc);
+    }
+    return result;
   }
 
   override render() {
@@ -54,6 +73,11 @@ export class KanaGame extends LitElement {
       <slot></slot>
       <input id="kana-input" type="text" placeholder="Type in romaji..." />
     `;
+  }
+
+  private _onMecabReady() {
+    this.mecabInitialized = true;
+    this.dispatchEvent(new CustomEvent('mecab-ready'));
   }
 
   private _onClick() {

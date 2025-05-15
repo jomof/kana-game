@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "clean": "rimraf kana-game.{d.ts,d.ts.map,js,js.map} test/kana-game.{d.ts,d.ts.map,js,js.map} test/kana-game_test.{d.ts,d.ts.map,js,js.map}","lint": "npm run lint:lit-analyzer && npm run lint:eslint",
+    "clean": "rimraf kana-game.{d.ts,d.ts.map,js,js.map} test/kana-game.{d.ts,d.ts.map,js,js.map} test/kana-game_test.{d.ts,d.ts.map,js,js.map}",
     "lint": "npm run lint:lit-analyzer && npm run lint:eslint",
     "lint:eslint": "eslint 'src/**/*.ts'",
     "lint:lit-analyzer": "lit-analyzer",
@@ -25,7 +25,7 @@
     "analyze:watch": "cem analyze --litelement --globs \"src/**/*.ts\" --watch",
     "serve": "wds --watch",
     "serve:prod": "MODE=prod npm run serve",
-    "test": "npm run test:dev && npm run test:prod",
+    "test": "npm run build && npm run test:dev && npm run test:prod",
     "test:dev": "wtr",
     "test:watch": "wtr --watch",
     "test:prod": "MODE=prod wtr",
@@ -38,10 +38,12 @@
     "typescript",
     "lit"
   ],
-  "author": "Google LLC",
+  "author": "Jomo Fisher",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "lit": "^3.2.0"
+    "lit": "^3.2.0",
+    "wanakana": "^5.3.1",
+    "mecab-wasm": "^1.0.3"
   },
   "devDependencies": {
     "@11ty/eleventy": "^1.0.1",
@@ -60,12 +62,13 @@
     "@webcomponents/webcomponentsjs": "^2.8.0",
     "eslint": "^8.15.0",
     "lit-analyzer": "^1.2.1",
+    "patch-package": "^8.0.0",
     "prettier": "^2.6.2",
     "rimraf": "^3.0.2",
     "rollup": "^4.18.0",
     "rollup-plugin-summary": "^2.0.1",
-    "typescript": "~5.5.0",
-    "wanakana": "^5.3.1"
+    "typescript": "~5.5.0"
+
   },
   "customElements": "custom-elements.json"
 }
