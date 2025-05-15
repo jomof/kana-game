@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2019 
+ * Copyright 2019
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -46,11 +46,12 @@ export class KanaGame extends LitElement {
   mecabInitialized = false;
 
   override firstUpdated() {
-    const input = this.shadowRoot?.getElementById('kana-input') as HTMLInputElement;
+    const input = this.shadowRoot?.getElementById(
+      'kana-input'
+    ) as HTMLInputElement;
     if (input) {
-      wanakana.bind(input, { IMEMode: true });
+      wanakana.bind(input, {IMEMode: true});
     }
-    
   }
 
   protected override async getUpdateComplete(): Promise<boolean> {
@@ -59,7 +60,7 @@ export class KanaGame extends LitElement {
       await Mecab.waitReady();
       this._onMecabReady();
       const mc = Mecab.query('日本語を勉強しています。');
-      console.log("MECABX" + mc);
+      console.log('MECABX' + mc);
     }
     return result;
   }

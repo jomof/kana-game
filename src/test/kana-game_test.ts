@@ -10,12 +10,11 @@ import {fixture, assert} from '@open-wc/testing';
 import {html} from 'lit/static-html.js';
 
 suite('kana-game', () => {
-
   /**
    * Helper function to create a fixture of the KanaGame element.
    * @returns {Promise<KanaGame>} A promise that resolves to the KanaGame element.
    */
-  async function getElement() : Promise<KanaGame> {
+  async function getElement(): Promise<KanaGame> {
     const el = await fixture(html`<kana-game></kana-game>`);
     const shadowRoot = el.shadowRoot;
     assert.ok(shadowRoot, 'Shadow root should be present');
@@ -26,7 +25,7 @@ suite('kana-game', () => {
     return el as KanaGame;
   }
 
-  function getExpectedHtml(count: number) : string {
+  function getExpectedHtml(count: number): string {
     return `
       <h1>Hello, World!</h1>
       <button part="button">Click Count: ${count}</button>
@@ -51,18 +50,12 @@ suite('kana-game', () => {
 
   test('renders with default values', async () => {
     const el = await getElement();
-    assert.shadowDom.equal(
-      el,
-      getExpectedHtml(0)
-    );
+    assert.shadowDom.equal(el, getExpectedHtml(0));
   });
 
   test('renders with a set name', async () => {
     const el = await getElement();
-    assert.shadowDom.equal(
-      el,
-      getExpectedHtml(0)
-    );
+    assert.shadowDom.equal(el, getExpectedHtml(0));
   });
 
   test('handles a click', async () => {
@@ -70,31 +63,25 @@ suite('kana-game', () => {
     const button = el.shadowRoot!.querySelector('button')!;
     button.click();
     await el.updateComplete;
-    assert.shadowDom.equal(
-      el,
-      getExpectedHtml(1)
-    );
+    assert.shadowDom.equal(el, getExpectedHtml(1));
   });
 
-    test('handles a click', async () => {
+  test('handles a click', async () => {
     const el = await getElement();
     const button = el.shadowRoot!.querySelector('button')!;
     button.click();
     await el.updateComplete;
-    assert.shadowDom.equal(
-      el,
-      getExpectedHtml(1)
-    );
+    assert.shadowDom.equal(el, getExpectedHtml(1));
   });
 
   test('notifies Mecab', async () => {
-    const el = await fixture(html`<kana-game></kana-game>`) as KanaGame;
+    const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
     await el.updateComplete;
     assert.equal(el.mecabInitialized, true);
   });
 
   test('converts romaji input to kana using WanaKana', async () => {
-    const el = await fixture(html`<kana-game></kana-game>`) as KanaGame;
+    const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
     const shadowRoot = el.shadowRoot;
     assert.ok(shadowRoot, 'Shadow root should be present');
 
@@ -105,7 +92,7 @@ suite('kana-game', () => {
     input.value = 'konichiha';
 
     // Dispatch an input event to trigger WanaKana binding
-    input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    input.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
 
     // Wait for any asynchronous updates
     await el.updateComplete;

@@ -9,10 +9,7 @@
     "type": "git",
     "url": "git+https://github.com/itayperl/mecab-wasm.git"
   },
-  "keywords": [
-    "japanese",
-    "mecab"
-  ],
+  "keywords": ["japanese", "mecab"],
   "author": "Itay Perl",
   "license": "BSD-3-Clause",
   "bugs": {
@@ -26,6 +23,6 @@
     "LICENSE.mecab",
     "LICENSE.mecab-ipadict"
   ],
-  "exports": [ "./lib/mecab.js" ],
+  "exports": ["./lib/mecab.js"],
   "homepage": "https://github.com/itayperl/mecab-wasm"
 }
