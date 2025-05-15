@@ -54,11 +54,11 @@ export class KanaGame extends LitElement {
   }
 
   protected override async getUpdateComplete(): Promise<boolean> {
-    var result = await super.getUpdateComplete();
+    const result = await super.getUpdateComplete();
     if (result) {
       await Mecab.waitReady();
       this._onMecabReady();
-      var mc = Mecab.query('日本語を勉強しています。');
+      const mc = Mecab.query('日本語を勉強しています。');
       console.log("MECABX" + mc);
     }
     return result;
