@@ -18,5 +18,5 @@ sudo apt-get install -y \
     libmanette-0.2-0 \
     libgles2
 echo postInstall--------------------------------------------------------
-./postInstall/postInstall.sh
+sudo ./postInstall/postInstall.sh
 
