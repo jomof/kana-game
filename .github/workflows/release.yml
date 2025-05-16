@@ -61,7 +61,9 @@ jobs:
 
       - name: Build project
         run: npm run build
-
+      
+      - name: Build docs
+        run: npm run docs:build
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v1
