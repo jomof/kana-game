@@ -38,15 +38,9 @@ jobs:
       - name: Run tests
         run: npm test
 
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-      - run: npm ci
-      - run: npm run docs
+      - name: Build docs
+        run: npm run docs
+
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
