@@ -45,6 +45,9 @@ export class KanaGame extends LitElement {
   @property({type: Boolean})
   mecabInitialized = false;
 
+  @property({type: String})
+  english = '';
+
   override firstUpdated() {
     const input = this.shadowRoot?.getElementById(
       'kana-input'
@@ -59,18 +62,21 @@ export class KanaGame extends LitElement {
     if (result) {
       await Mecab.waitReady();
       this._onMecabReady();
-      Mecab.query('日本語を勉強しています。');
+      const mc = Mecab.query('日本語を勉強しています。');
+      this.count++;
+      console.log(JSON.stringify(mc, null, 2));
     }
+    console.log('Update complete');
     return result;
   }
 
   override render() {
     return html`
       <h1>${this.sayHello(this.name)}!</h1>
+      <h2>${this.english}</h2>
       <button @click=${this._onClick} part="button">
-        Click Count: ${this.count}
+        Click Count: ${this.count} ${this.mecabInitialized}
       </button>
-      <slot></slot>
       <input id="kana-input" type="text" placeholder="Type in romaji..." />
     `;
   }
@@ -90,7 +96,7 @@ export class KanaGame extends LitElement {
    * @param name The name to say "Hello" to
    */
   sayHello(name: string): string {
-    return `Hello, ${name}`;
+    return `Hello, ${name} ${this.mecabInitialized} ${this.count}`;
   }
 }
 

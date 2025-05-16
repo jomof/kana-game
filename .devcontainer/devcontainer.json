@@ -12,6 +12,5 @@
       ]
     }
   },
-  "postCreateCommand": "./setup-dev.sh && npx playwright install && npx playwright install-deps",
-  "postStartCommand": "code --folder-uri $(pwd) && sleep 3 && code --run-task 'Build: Watch'"
+  "postCreateCommand": "./setup-dev.sh && npx playwright install && npx playwright install-deps"
 }

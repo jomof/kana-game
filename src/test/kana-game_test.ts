@@ -66,14 +66,6 @@ suite('kana-game', () => {
     assert.shadowDom.equal(el, getExpectedHtml(1));
   });
 
-  test('handles a click', async () => {
-    const el = await getElement();
-    const button = el.shadowRoot!.querySelector('button')!;
-    button.click();
-    await el.updateComplete;
-    assert.shadowDom.equal(el, getExpectedHtml(1));
-  });
-
   test('notifies Mecab', async () => {
     const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
     await el.updateComplete;

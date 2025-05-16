@@ -4,8 +4,8 @@
   <head>
     <meta charset="utf-8" />
     <title>&lt;kana-game> Demo</title>
-    <script src="../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
-    <script src="../node_modules/lit/polyfill-support.js"></script>
+    <!-- <script src="../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+    <script src="../node_modules/lit/polyfill-support.js"></script> -->
     <script type="module" src="../kana-game.js"></script>
     <style>
       p {
@@ -15,8 +15,17 @@
     </style>
   </head>
   <body>
-    <kana-game>
-      <p>This is child content</p>
-    </kana-game>
+    <kana-game/>
+    <script type="module">
+      window.addEventListener('DOMContentLoaded', async () => {
+        const game = document.querySelector('kana-game');
+        game.english = 'I live in Seattle';
+        game.japanese = ['シアトルに住んでいます。', 'シアトルに住んでる。'];
+        console.log('DOM loaded')
+        await game.updateComplete;
+        console.log('game loaded');
+      });
+    </script>
+
   </body>
 </html>
