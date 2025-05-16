@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2019
+ * Copyright 2019 Jomo Fisher
  * SPDX-License-Identifier: BSD-3-Clause
  */
 

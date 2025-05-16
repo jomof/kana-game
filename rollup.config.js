@@ -10,6 +10,8 @@ import resolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import analyze from 'rollup-plugin-analyzer';
 import copy from 'rollup-plugin-copy';
+import commonjs   from '@rollup/plugin-commonjs';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 export default {
   input: 'kana-game.js',
@@ -25,6 +27,12 @@ export default {
   plugins: [
     replace({preventAssignment: false, 'Reflect.decorate': 'undefined'}),
     resolve(),
+    nodeResolve({
+      browser:     true,
+      extensions:  ['.mjs', '.js', '.json', '.wasm'],
+      mainFields:  ['browser','module','main']
+    }),
+    commonjs(),
     copy({
       targets: [
         { src: 'node_modules/mecab-wasm/lib/*.wasm', dest: 'docs' },
