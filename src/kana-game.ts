@@ -62,11 +62,7 @@ export class KanaGame extends LitElement {
     if (result) {
       await Mecab.waitReady();
       this._onMecabReady();
-      const mc = Mecab.query('日本語を勉強しています。');
-      this.count++;
-      console.log(JSON.stringify(mc, null, 2));
     }
-    console.log('Update complete');
     return result;
   }
 
@@ -75,8 +71,9 @@ export class KanaGame extends LitElement {
       <h1>${this.sayHello(this.name)}!</h1>
       <h2>${this.english}</h2>
       <button @click=${this._onClick} part="button">
-        Click Count: ${this.count} ${this.mecabInitialized}
+        Click Count: ${this.count}
       </button>
+      <slot></slot>
       <input id="kana-input" type="text" placeholder="Type in romaji..." />
     `;
   }
@@ -96,7 +93,7 @@ export class KanaGame extends LitElement {
    * @param name The name to say "Hello" to
    */
   sayHello(name: string): string {
-    return `Hello, ${name} ${this.mecabInitialized} ${this.count}`;
+    return `Hello, ${name}`;
   }
 }
 

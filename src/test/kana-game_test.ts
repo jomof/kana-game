@@ -28,6 +28,8 @@ suite('kana-game', () => {
   function getExpectedHtml(count: number): string {
     return `
       <h1>Hello, World!</h1>
+      <h2>
+      </h2>
       <button part="button">Click Count: ${count}</button>
       <slot></slot>
       <input
@@ -68,7 +70,9 @@ suite('kana-game', () => {
 
   test('notifies Mecab', async () => {
     const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
+    console.log('Waiting for updateComplete');
     await el.updateComplete;
+    console.log('updateComplete');
     assert.equal(el.mecabInitialized, true);
   });
 
