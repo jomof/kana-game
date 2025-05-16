@@ -8,6 +8,8 @@ import summary from 'rollup-plugin-summary';
 import terser from '@rollup/plugin-terser';
 import resolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
+import analyze from 'rollup-plugin-analyzer';
+import copy from 'rollup-plugin-copy';
 
 export default {
   input: 'kana-game.js',
@@ -23,6 +25,12 @@ export default {
   plugins: [
     replace({preventAssignment: false, 'Reflect.decorate': 'undefined'}),
     resolve(),
+    copy({
+      targets: [
+        { src: 'node_modules/mecab-wasm/lib/*.wasm', dest: 'docs' },
+        { src: 'node_modules/mecab-wasm/lib/*.data', dest: 'docs' },
+      ]
+    }),
     /**
      * This minification setup serves the static site generation.
      * For bundling and minification, check the README.md file.
@@ -37,6 +45,7 @@ export default {
         },
       },
     }),
+    analyze({ summaryOnly: true }),
     summary(),
   ],
 };
