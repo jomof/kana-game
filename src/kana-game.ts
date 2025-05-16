@@ -59,8 +59,7 @@ export class KanaGame extends LitElement {
     if (result) {
       await Mecab.waitReady();
       this._onMecabReady();
-      const mc = Mecab.query('日本語を勉強しています。');
-      console.log('MECABX' + mc);
+      Mecab.query('日本語を勉強しています。');
     }
     return result;
   }

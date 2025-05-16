@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build: Watch",
+      "type": "shell",
+      "command": "npm run build:watch",
+      "problemMatcher": [],
+      "isBackground": true,
+      "group": "build"
+    }
+  ]
+}
