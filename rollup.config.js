@@ -38,7 +38,7 @@ export default {
         { src: 'node_modules/mecab-wasm/lib/*.wasm', dest: 'docs' },
         { src: 'node_modules/mecab-wasm/lib/*.data', dest: 'docs' },
         { src: 'node_modules/lit/polyfill-support.js', dest: 'docs/node_modules/lit' },
-        { src: 'node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js', dest: 'node_modules/@webcomponents/webcomponentsjs' },
+        { src: 'node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js', dest: 'docs/node_modules/@webcomponents/webcomponentsjs' },
 
         
       ]
