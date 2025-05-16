@@ -37,22 +37,26 @@ export default {
       targets: [
         { src: 'node_modules/mecab-wasm/lib/*.wasm', dest: 'docs' },
         { src: 'node_modules/mecab-wasm/lib/*.data', dest: 'docs' },
+        { src: 'node_modules/lit/polyfill-support.js', dest: 'docs/node_modules/lit' },
+        { src: 'node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js', dest: 'node_modules/@webcomponents/webcomponentsjs' },
+
+        
       ]
     }),
     /**
      * This minification setup serves the static site generation.
      * For bundling and minification, check the README.md file.
      */
-    terser({
-      ecma: 2021,
-      module: true,
-      warnings: true,
-      mangle: {
-        properties: {
-          regex: /^__/,
-        },
-      },
-    }),
+    // terser({
+    //   ecma: 2021,
+    //   module: true,
+    //   warnings: true,
+    //   mangle: {
+    //     properties: {
+    //       regex: /^__/,
+    //     },
+    //   },
+    // }),
     analyze({ summaryOnly: true }),
     summary(),
   ],
