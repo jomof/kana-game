@@ -7,7 +7,13 @@
 import {LitElement, html, css} from 'lit';
 import {customElement, property, query} from 'lit/decorators.js';
 import * as wanakana from 'wanakana';
-import Mecab from 'mecab-wasm';
+import Mecab, {MecabToken} from 'mecab-wasm';
+
+export interface Question {
+  english: string;
+  japanese: string[];
+  parsed: MecabToken[][];
+}
 
 @customElement('kana-game')
 export class KanaGame extends LitElement {
@@ -31,7 +37,7 @@ export class KanaGame extends LitElement {
     span#english {
       font-family: var(
         --kana-game-english-font-family,
-        "Noto Sans JP",
+        'Noto Sans JP',
         sans-serif
       );
       font-size: var(--kana-game-english-font-size, 22px);
@@ -42,7 +48,7 @@ export class KanaGame extends LitElement {
     span#skeleton {
       font-family: var(
         --kana-game-skeleton-font-family,
-        "Noto Sans JP",
+        'Noto Sans JP',
         sans-serif
       );
       font-size: var(--kana-game-skeleton-font-size, 22px);
@@ -53,7 +59,7 @@ export class KanaGame extends LitElement {
     input#kana-input {
       font-family: var(
         --kana-game-input-font-family,
-        "Noto Sans JP",
+        'Noto Sans JP',
         sans-serif
       );
       font-size: var(--kana-game-input-font-size, 22px);
@@ -99,10 +105,23 @@ export class KanaGame extends LitElement {
   english = 'I live in Seattle.';
 
   @property({type: String})
-  skeleton = '___________________';
+  skeleton = '_';
 
   @query('#kana-input')
   kana!: HTMLInputElement;
+
+  question: Question | null = null;
+
+  supplyQuestion(question: Question) {
+    this.question = structuredClone(question);
+    this.english = this.question.english;
+    this.question.parsed = this.question.japanese.map(Mecab.query);
+
+    this.skeleton = '';
+    for (const parsed of this.question.parsed) {
+      this.skeleton += '_'.repeat(parsed[0].reading.length);
+    }
+  }
 
   override firstUpdated() {
     if (this.kana) {
@@ -122,12 +141,8 @@ export class KanaGame extends LitElement {
 
   override render() {
     return html`
-      <span 
-        id="english"
-        part="english">${this.english}</span><br />
-      <span 
-        id="skeleton"
-        part="skeleton">${this.skeleton}</span><br />
+      <span id="english" part="english">${this.english}</span><br />
+      <span id="skeleton" part="skeleton">${this.skeleton}</span><br />
       <input
         id="kana-input"
         part="kana-input"

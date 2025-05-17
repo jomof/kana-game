@@ -36,7 +36,7 @@ suite('kana-game', () => {
       <span 
         id="skeleton"
         part="skeleton">
-        ___________________
+        _
       </span>
       <br>
       <input
@@ -84,10 +84,20 @@ suite('kana-game', () => {
 
   test('notifies Mecab', async () => {
     const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
-    console.log('Waiting for updateComplete');
     await el.updateComplete;
-    console.log('updateComplete');
     assert.equal(el.mecabInitialized, true);
+  });
+
+  test('check supplyQuestion', async () => {
+    const game = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
+    await game.updateComplete;
+    game.supplyQuestion({
+      english: 'I am a teacher.',
+      japanese: ['先生です。', '先生だ。'],
+      parsed: [],
+    });
+    await game.updateComplete;
+    assert.equal(game.english, 'I am a teacher.');
   });
 
   test('converts romaji input to kana using WanaKana', async () => {

@@ -46,11 +46,27 @@
     </div>
 
     <script type="module">
+      let questions = [
+        {
+          id: 0,
+          english: 'I live in Seattle.',
+          japanese: ['シアトルに住んでいます。', 'シアトルに住んでる。'],
+        },
+        {
+          id: 1,
+          english: 'I am a student.',
+          japanese: ['学生です。', '学生だ。'],
+        },
+        {
+          id: 2,
+          english: 'I am a teacher.',
+          japanese: ['先生です。', '先生だ。'],
+        },
+      ];
       window.addEventListener('DOMContentLoaded', async () => {
         const game = document.querySelector('kana-game');
-        game.english = 'I live in Seattle.';
-        game.japanese = ['シアトルに住んでいます。', 'シアトルに住んでる。'];
         await game.updateComplete;
+        game.supplyQuestion(questions[1]);
       });
     </script>
   </body>
