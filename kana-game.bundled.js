@@ -7224,7 +7224,17 @@ let KanaGame = class KanaGame extends i {
          */
         this.mecabInitialized = false;
         this.english = 'I live in Seattle.';
-        this.skeleton = '___________________';
+        this.skeleton = '_';
+        this.question = null;
+    }
+    supplyQuestion(question) {
+        this.question = structuredClone(question);
+        this.english = this.question.english;
+        this.question.parsed = this.question.japanese.map(Mecab.query);
+        this.skeleton = '';
+        for (const parsed of this.question.parsed) {
+            this.skeleton += '_'.repeat(parsed[0].reading.length);
+        }
     }
     firstUpdated() {
         if (this.kana) {
@@ -7242,12 +7252,8 @@ let KanaGame = class KanaGame extends i {
     }
     render() {
         return x `
-      <span 
-        id="english"
-        part="english">${this.english}</span><br />
-      <span 
-        id="skeleton"
-        part="skeleton">${this.skeleton}</span><br />
+      <span id="english" part="english">${this.english}</span><br />
+      <span id="skeleton" part="skeleton">${this.skeleton}</span><br />
       <input
         id="kana-input"
         part="kana-input"
@@ -7291,7 +7297,7 @@ KanaGame.styles = i$3 `
     span#english {
       font-family: var(
         --kana-game-english-font-family,
-        "Noto Sans JP",
+        'Noto Sans JP',
         sans-serif
       );
       font-size: var(--kana-game-english-font-size, 22px);
@@ -7302,7 +7308,7 @@ KanaGame.styles = i$3 `
     span#skeleton {
       font-family: var(
         --kana-game-skeleton-font-family,
-        "Noto Sans JP",
+        'Noto Sans JP',
         sans-serif
       );
       font-size: var(--kana-game-skeleton-font-size, 22px);
@@ -7313,7 +7319,7 @@ KanaGame.styles = i$3 `
     input#kana-input {
       font-family: var(
         --kana-game-input-font-family,
-        "Noto Sans JP",
+        'Noto Sans JP',
         sans-serif
       );
       font-size: var(--kana-game-input-font-size, 22px);
