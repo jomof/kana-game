@@ -7224,7 +7224,7 @@ let KanaGame = class KanaGame extends i {
          */
         this.mecabInitialized = false;
         this.english = 'I live in Seattle.';
-        this.skeleton = '';
+        this.skeleton = '___________________';
     }
     firstUpdated() {
         if (this.kana) {
@@ -7242,13 +7242,18 @@ let KanaGame = class KanaGame extends i {
     }
     render() {
         return x `
-      <span id="english">${this.english}</span><br />
-      <span id="skeleton">${this.skeleton}</span><br />
+      <span 
+        id="english"
+        part="english">${this.english}</span><br />
+      <span 
+        id="skeleton"
+        part="skeleton">${this.skeleton}</span><br />
       <input
         id="kana-input"
+        part="kana-input"
         type="text"
         @keydown=${this.handleKeydown}
-        placeholder="Type in romaji..."
+        placeholder="答え"
       />
     `;
     }
@@ -7259,6 +7264,8 @@ let KanaGame = class KanaGame extends i {
     handleKeydown(e) {
         if (e.key === 'Enter') {
             const value = e.target.value;
+            if (this.skeleton[0] === '_')
+                this.skeleton = '';
             this.skeleton += value;
             this.kana.value = '';
         }
@@ -7266,10 +7273,79 @@ let KanaGame = class KanaGame extends i {
 };
 KanaGame.styles = i$3 `
     :host {
-      display: block;
-      border: solid 1px gray;
-      padding: 16px;
-      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      /* allow both light & dark; UA picks based on prefers-color-scheme */
+      color-scheme: light dark;
+
+      /* default (light) look */
+      border: var(--kana-game-border, solid 1px gray);
+      padding: var(--kana-game-padding, 16px);
+      max-width: var(--kana-game-max-width, 800px);
+      background-color: var(--kana-game-background-color, #fff);
+      color: var(--kana-game-text-color, #000);
+    }
+
+    span#english {
+      font-family: var(
+        --kana-game-english-font-family,
+        "Noto Sans JP",
+        sans-serif
+      );
+      font-size: var(--kana-game-english-font-size, 22px);
+      text-align: var(--kana-game-english-text-align, center);
+      width: var(--kana-game-english-width, 100%);
+    }
+
+    span#skeleton {
+      font-family: var(
+        --kana-game-skeleton-font-family,
+        "Noto Sans JP",
+        sans-serif
+      );
+      font-size: var(--kana-game-skeleton-font-size, 22px);
+      text-align: var(--kana-game-skeleton-text-align, center);
+      width: var(--kana-game-skeleton-width, 100%);
+    }
+
+    input#kana-input {
+      font-family: var(
+        --kana-game-input-font-family,
+        "Noto Sans JP",
+        sans-serif
+      );
+      font-size: var(--kana-game-input-font-size, 22px);
+      line-height: var(--kana-game-input-line-height, 33px);
+      text-align: var(--kana-game-input-text-align, center);
+      width: var(--kana-game-input-width, 100%);
+
+      /* light-mode input styling */
+      background-color: var(--kana-game-input-bg, #fff);
+      color: var(--kana-game-input-color, #000);
+      border: var(--kana-game-input-border, solid 1px #ccc);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :host {
+        /* dark-mode host overrides */
+        background-color: var(--kana-game-background-color-dark, #121212);
+        color: var(--kana-game-text-color-dark, #eee);
+        border: var(--kana-game-border-dark, solid 1px #444);
+      }
+
+      span#english {
+        /* if you want a different heading color in dark */
+        color: var(--kana-game-english-color-dark, #eee);
+      }
+
+      input#kana-input {
+        /* dark-mode input overrides */
+        background-color: var(--kana-game-input-bg-dark, #222);
+        color: var(--kana-game-input-color-dark, #eee);
+        border: var(--kana-game-input-border-dark, solid 1px #555);
+      }
     }
   `;
 __decorate([
