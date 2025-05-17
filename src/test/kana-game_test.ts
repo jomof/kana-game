@@ -27,11 +27,16 @@ suite('kana-game', () => {
 
   function getExpectedHtml(): string {
     return `
-      <span id="english">
+      <span 
+        id="english"
+        part="english">
         I live in Seattle.
       </span>
       <br>
-      <span id="skeleton">
+      <span 
+        id="skeleton"
+        part="skeleton">
+        ___________________
       </span>
       <br>
       <input
@@ -40,7 +45,8 @@ suite('kana-game', () => {
        autocorrect="off"
        id="kana-input"
        lang="ja"
-       placeholder="Type in romaji..."
+       part="kana-input"
+       placeholder="答え"
        spellcheck="false"
        type="text"
       >
