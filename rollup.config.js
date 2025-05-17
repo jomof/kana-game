@@ -10,8 +10,8 @@ import resolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import analyze from 'rollup-plugin-analyzer';
 import copy from 'rollup-plugin-copy';
-import commonjs   from '@rollup/plugin-commonjs';
-import { nodeResolve } from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import {nodeResolve} from '@rollup/plugin-node-resolve';
 
 export default {
   input: 'kana-game.js',
@@ -28,20 +28,24 @@ export default {
     replace({preventAssignment: false, 'Reflect.decorate': 'undefined'}),
     resolve(),
     nodeResolve({
-      browser:     true,
-      extensions:  ['.mjs', '.js', '.json', '.wasm'],
-      mainFields:  ['browser','module','main']
+      browser: true,
+      extensions: ['.mjs', '.js', '.json', '.wasm'],
+      mainFields: ['browser', 'module', 'main'],
     }),
     commonjs(),
     copy({
       targets: [
-        { src: 'node_modules/mecab-wasm/lib/*.wasm', dest: 'docs' },
-        { src: 'node_modules/mecab-wasm/lib/*.data', dest: 'docs' },
-        { src: 'node_modules/lit/polyfill-support.js', dest: 'docs/node_modules/lit' },
-        { src: 'node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js', dest: 'docs/node_modules/@webcomponents/webcomponentsjs' },
-
-        
-      ]
+        {src: 'node_modules/mecab-wasm/lib/*.wasm', dest: 'docs'},
+        {src: 'node_modules/mecab-wasm/lib/*.data', dest: 'docs'},
+        {
+          src: 'node_modules/lit/polyfill-support.js',
+          dest: 'docs/node_modules/lit',
+        },
+        {
+          src: 'node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js',
+          dest: 'docs/node_modules/@webcomponents/webcomponentsjs',
+        },
+      ],
     }),
     /**
      * This minification setup serves the static site generation.
@@ -57,7 +61,7 @@ export default {
     //     },
     //   },
     // }),
-    analyze({ summaryOnly: true }),
+    analyze({summaryOnly: true}),
     summary(),
   ],
 };

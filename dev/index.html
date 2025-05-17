@@ -15,17 +15,16 @@
     </style>
   </head>
   <body>
-    <kana-game/>
+    <kana-game />
     <script type="module">
       window.addEventListener('DOMContentLoaded', async () => {
         const game = document.querySelector('kana-game');
         game.english = 'I live in Seattle';
         game.japanese = ['シアトルに住んでいます。', 'シアトルに住んでる。'];
-        console.log('DOM loaded')
+        console.log('DOM loaded');
         await game.updateComplete;
         console.log('game loaded');
       });
     </script>
-
   </body>
 </html>

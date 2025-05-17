@@ -25,13 +25,15 @@ suite('kana-game', () => {
     return el as KanaGame;
   }
 
-  function getExpectedHtml(count: number): string {
+  function getExpectedHtml(): string {
     return `
-      <h1>Hello, World!</h1>
-      <h2>
-      </h2>
-      <button part="button">Click Count: ${count}</button>
-      <slot></slot>
+      <span id="english">
+        I live in Seattle.
+      </span>
+      <br>
+      <span id="skeleton">
+      </span>
+      <br>
       <input
        autocapitalize="none"
        autocomplete="off"
@@ -52,20 +54,26 @@ suite('kana-game', () => {
 
   test('renders with default values', async () => {
     const el = await getElement();
-    assert.shadowDom.equal(el, getExpectedHtml(0));
+    assert.shadowDom.equal(el, getExpectedHtml());
   });
 
   test('renders with a set name', async () => {
     const el = await getElement();
-    assert.shadowDom.equal(el, getExpectedHtml(0));
+    assert.shadowDom.equal(el, getExpectedHtml());
   });
 
-  test('handles a click', async () => {
-    const el = await getElement();
-    const button = el.shadowRoot!.querySelector('button')!;
-    button.click();
-    await el.updateComplete;
-    assert.shadowDom.equal(el, getExpectedHtml(1));
+  test('handles enter', async () => {
+    const game = await getElement();
+    const kana = game.kana;
+    kana.value = 'こにちは';
+    const enterEvent = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      composed: true,
+    });
+    kana.dispatchEvent(enterEvent);
+    await game.updateComplete;
+    assert.equal(game.skeleton, 'こにちは');
   });
 
   test('notifies Mecab', async () => {

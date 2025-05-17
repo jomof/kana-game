@@ -5,17 +5,10 @@
  */
 
 import {LitElement, html, css} from 'lit';
-import {customElement, property} from 'lit/decorators.js';
+import {customElement, property, query} from 'lit/decorators.js';
 import * as wanakana from 'wanakana';
 import Mecab from 'mecab-wasm';
 
-/**
- * An example element.
- *
- * @fires count-changed - Indicates when the count changes
- * @slot - This element has a slot
- * @csspart button - The button
- */
 @customElement('kana-game')
 export class KanaGame extends LitElement {
   static override styles = css`
@@ -28,32 +21,24 @@ export class KanaGame extends LitElement {
   `;
 
   /**
-   * The name to say "Hello" to.
-   */
-  @property()
-  name = 'World';
-
-  /**
-   * The number of times the button has been clicked.
-   */
-  @property({type: Number})
-  count = 0;
-
-  /**
    * Whether mecab has been initialized.
    */
   @property({type: Boolean})
   mecabInitialized = false;
 
   @property({type: String})
-  english = '';
+  english = 'I live in Seattle.';
+
+  @property({type: String})
+  skeleton = '';
+
+  @query('#kana-input')
+  kana!: HTMLInputElement;
 
   override firstUpdated() {
-    const input = this.shadowRoot?.getElementById(
-      'kana-input'
-    ) as HTMLInputElement;
-    if (input) {
-      wanakana.bind(input, {IMEMode: true});
+    if (this.kana) {
+      wanakana.bind(this.kana, {IMEMode: true});
+      this.kana.focus();
     }
   }
 
@@ -68,13 +53,14 @@ export class KanaGame extends LitElement {
 
   override render() {
     return html`
-      <h1>${this.sayHello(this.name)}!</h1>
-      <h2>${this.english}</h2>
-      <button @click=${this._onClick} part="button">
-        Click Count: ${this.count}
-      </button>
-      <slot></slot>
-      <input id="kana-input" type="text" placeholder="Type in romaji..." />
+      <span id="english">${this.english}</span><br />
+      <span id="skeleton">${this.skeleton}</span><br />
+      <input
+        id="kana-input"
+        type="text"
+        @keydown=${this.handleKeydown}
+        placeholder="Type in romaji..."
+      />
     `;
   }
 
@@ -83,17 +69,12 @@ export class KanaGame extends LitElement {
     this.dispatchEvent(new CustomEvent('mecab-ready'));
   }
 
-  private _onClick() {
-    this.count++;
-    this.dispatchEvent(new CustomEvent('count-changed'));
-  }
-
-  /**
-   * Formats a greeting
-   * @param name The name to say "Hello" to
-   */
-  sayHello(name: string): string {
-    return `Hello, ${name}`;
+  private handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      const value = (e.target as HTMLInputElement).value;
+      this.skeleton += value;
+      this.kana.value = '';
+    }
   }
 }
 
