@@ -15,6 +15,72 @@ export interface Question {
   parsed: MecabToken[][];
 }
 
+export interface Token extends MecabToken {
+  marked: boolean | undefined;
+}
+
+/**
+ * Attempts to match `str` as a concatenation of a subsequence of `tokens[i].reading`.
+ * If successful, marks those tokens and returns the list of token-indices that were
+ * flipped from false→true. If it matches only already-marked tokens, returns { matched: [] }.
+ * If no such segmentation exists, **returns { matched: null } and leaves every token.marked unchanged**.
+ */
+export function markTokens(tokens: Token[], str: string): { matched: number[] | null } {
+  str = wanakana.toKatakana(str)
+  // (1) First search—no mutations yet
+  const matchIndices = findMatch(tokens, str, 0, 0);
+  if (!matchIndices) {
+    // (2) On failure, we bail out immediately—tokens[].marked is untouched
+    return { matched: null };
+  }
+
+  // (3) On success, flip only the newly-matched tokens
+  const newlyMarked: number[] = [];
+  for (const idx of matchIndices) {
+    if (!tokens[idx].marked) {
+      tokens[idx].marked = true;
+      newlyMarked.push(idx);
+    }
+  }
+  return { matched: newlyMarked };
+}
+
+
+/**
+ * Recursive helper.
+ * @param startIdx  index in tokens[] to start searching from
+ * @param pos       character position in str to match next
+ * @returns         an array of token-indices forming a match, or null if none
+ */
+function findMatch(
+  tokens: Token[],
+  str: string,
+  startIdx: number,
+  pos: number
+): number[] | null {
+  // If we've consumed the entire string, that's a successful (empty) tail match
+  if (pos === str.length) {
+    return [];
+  }
+
+  // Try each token at or after startIdx
+  for (let i = startIdx; i < tokens.length; i++) {
+    const { reading } = tokens[i];
+    // Does the string at position pos begin with this token's reading?
+    if (str.startsWith(reading, pos)) {
+      // If so, recurse to match the remainder from i+1 and pos+reading.length
+      const rest = findMatch(tokens, str, i + 1, pos + reading.length);
+      if (rest) {
+        return [i, ...rest];
+      }
+    }
+  }
+
+  // No token here leads to a full match
+  return null;
+}
+
+
 @customElement('kana-game')
 export class KanaGame extends LitElement {
   static override styles = css`

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {KanaGame} from '../kana-game.js';
-
+import {KanaGame, Token, markTokens} from '../kana-game.js';
+import Mecab from 'mecab-wasm';
 import {fixture, assert} from '@open-wc/testing';
 import {html} from 'lit/static-html.js';
 
@@ -119,5 +119,42 @@ suite('kana-game', () => {
 
     // Assert that the input value has been converted to kana
     assert.equal(input.value, 'こにちは');
+  });
+
+  test('mark tokens 1', async () => {
+    const tokens = Mecab.query('私は学生です。') as Token[];
+    const result = markTokens(tokens, 'ワタシハガクセイデス')
+    assert.deepEqual(result.matched, [0, 1, 2, 3]);
+    assert.isTrue(tokens[0].marked);
+    assert.isTrue(tokens[1].marked);
+    assert.isTrue(tokens[2].marked);
+    assert.isTrue(tokens[3].marked);
+    assert.isUndefined(tokens[4].marked);
+  });
+
+  test('mark tokens 2', async () => {
+    const tokens = Mecab.query('私は学生です。') as Token[];
+    markTokens(tokens, 'ワタシ')
+    markTokens(tokens, 'ハ')
+    markTokens(tokens, 'ガクセイ')
+    markTokens(tokens, 'デス')
+    assert.isTrue(tokens[0].marked);
+    assert.isTrue(tokens[1].marked);
+    assert.isTrue(tokens[2].marked);
+    assert.isTrue(tokens[3].marked);
+    assert.isUndefined(tokens[4].marked);
+  });
+
+  test('mark tokens 3', async () => {
+    const tokens = Mecab.query('私は学生です。') as Token[];
+    assert.deepEqual(markTokens(tokens, 'ワタシハ').matched, [0, 1]);
+    assert.deepEqual(markTokens(tokens, 'ハガクセイ').matched, [2]);
+    assert.deepEqual(markTokens(tokens, 'ガクセイデス').matched, [3]);
+    assert.deepEqual(markTokens(tokens, 'デス').matched, []);
+    assert.isTrue(tokens[0].marked);
+    assert.isTrue(tokens[1].marked);
+    assert.isTrue(tokens[2].marked);
+    assert.isTrue(tokens[3].marked);
+    assert.isUndefined(tokens[4].marked);
   });
 });
