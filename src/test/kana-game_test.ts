@@ -123,7 +123,7 @@ suite('kana-game', () => {
 
   test('mark tokens 1', async () => {
     const tokens = Mecab.query('私は学生です。') as Token[];
-    const result = markTokens(tokens, 'ワタシハガクセイデス')
+    const result = markTokens(tokens, 'ワタシハガクセイデス');
     assert.deepEqual(result.matched, [0, 1, 2, 3]);
     assert.isTrue(tokens[0].marked);
     assert.isTrue(tokens[1].marked);
@@ -134,10 +134,10 @@ suite('kana-game', () => {
 
   test('mark tokens 2', async () => {
     const tokens = Mecab.query('私は学生です。') as Token[];
-    markTokens(tokens, 'ワタシ')
-    markTokens(tokens, 'ハ')
-    markTokens(tokens, 'ガクセイ')
-    markTokens(tokens, 'デス')
+    markTokens(tokens, 'ワタシ');
+    markTokens(tokens, 'ハ');
+    markTokens(tokens, 'ガクセイ');
+    markTokens(tokens, 'デス');
     assert.isTrue(tokens[0].marked);
     assert.isTrue(tokens[1].marked);
     assert.isTrue(tokens[2].marked);

@@ -25,13 +25,16 @@ export interface Token extends MecabToken {
  * flipped from false→true. If it matches only already-marked tokens, returns { matched: [] }.
  * If no such segmentation exists, **returns { matched: null } and leaves every token.marked unchanged**.
  */
-export function markTokens(tokens: Token[], str: string): { matched: number[] | null } {
-  str = wanakana.toKatakana(str)
+export function markTokens(
+  tokens: Token[],
+  str: string
+): {matched: number[] | null} {
+  str = wanakana.toKatakana(str);
   // (1) First search—no mutations yet
   const matchIndices = findMatch(tokens, str, 0, 0);
   if (!matchIndices) {
     // (2) On failure, we bail out immediately—tokens[].marked is untouched
-    return { matched: null };
+    return {matched: null};
   }
 
   // (3) On success, flip only the newly-matched tokens
@@ -42,9 +45,8 @@ export function markTokens(tokens: Token[], str: string): { matched: number[] | 
       newlyMarked.push(idx);
     }
   }
-  return { matched: newlyMarked };
+  return {matched: newlyMarked};
 }
-
 
 /**
  * Recursive helper.
@@ -65,7 +67,7 @@ function findMatch(
 
   // Try each token at or after startIdx
   for (let i = startIdx; i < tokens.length; i++) {
-    const { reading } = tokens[i];
+    const {reading} = tokens[i];
     // Does the string at position pos begin with this token's reading?
     if (str.startsWith(reading, pos)) {
       // If so, recurse to match the remainder from i+1 and pos+reading.length
@@ -79,7 +81,6 @@ function findMatch(
   // No token here leads to a full match
   return null;
 }
-
 
 @customElement('kana-game')
 export class KanaGame extends LitElement {
