@@ -162,6 +162,10 @@ const UPPERCASE_ZENKAKU_END = 0xff3a;
 const HIRAGANA_START = 0x3041;
 const HIRAGANA_END = 0x3096;
 const KATAKANA_START = 0x30a1;
+const KATAKANA_END = 0x30fc;
+const KANJI_START = 0x4e00;
+const KANJI_END = 0x9faf;
+const KANJI_ITERATION_MARK = 0x3005; // 々
 const PROLONGED_SOUND_MARK = 0x30fc; // ー
 const KANA_SLASH_DOT = 0x30fb; // ・
 const ZENKAKU_NUMBERS = [0xff10, 0xff19];
@@ -206,6 +210,26 @@ const JAPANESE_RANGES = [
     ZENKAKU_NUMBERS,
     COMMON_CJK,
     RARE_CJK,
+];
+const MODERN_ENGLISH = [0x0000, 0x007f];
+const HEPBURN_MACRON_RANGES = [
+    [0x0100, 0x0101],
+    [0x0112, 0x0113],
+    [0x012a, 0x012b],
+    [0x014c, 0x014d],
+    [0x016a, 0x016b], // Ū ū
+];
+const SMART_QUOTE_RANGES = [
+    [0x2018, 0x2019],
+    [0x201c, 0x201d], // “ ”
+];
+const ROMAJI_RANGES = [MODERN_ENGLISH, ...HEPBURN_MACRON_RANGES];
+const EN_PUNCTUATION_RANGES = [
+    [0x20, 0x2f],
+    [0x3a, 0x3f],
+    [0x5b, 0x60],
+    [0x7b, 0x7e],
+    ...SMART_QUOTE_RANGES,
 ];
 
 /**
@@ -1064,6 +1088,161 @@ function bind(element = {}, options = {}, debug = false) {
     }
 }
 
+/**
+ * Tests a character. Returns true if the character is [Romaji](https://en.wikipedia.org/wiki/Romaji) (allowing [Hepburn romanisation](https://en.wikipedia.org/wiki/Hepburn_romanization))
+ * @param  {String} char character string to test
+ * @return {Boolean}
+ */
+function isCharRomaji(char = '') {
+    if (isEmpty(char))
+        return false;
+    return ROMAJI_RANGES.some(([start, end]) => isCharInRange(char, start, end));
+}
+
+/**
+ * Test if `input` is [Romaji](https://en.wikipedia.org/wiki/Romaji) (allowing [Hepburn romanisation](https://en.wikipedia.org/wiki/Hepburn_romanization))
+ * @param  {String} [input=''] text
+ * @param  {RegExp} [allowed] additional test allowed to pass for each char
+ * @return {Boolean} true if [Romaji](https://en.wikipedia.org/wiki/Romaji)
+ * @example
+ * isRomaji('Tōkyō and Ōsaka')
+ * // => true
+ * isRomaji('12a*b&c-d')
+ * // => true
+ * isRomaji('あアA')
+ * // => false
+ * isRomaji('お願い')
+ * // => false
+ * isRomaji('a！b&cーd') // Zenkaku punctuation fails
+ * // => false
+ * isRomaji('a！b&cーd', /[！ー]/)
+ * // => true
+ */
+function isRomaji(input = '', allowed) {
+    const augmented = typeOf(allowed) === 'regexp';
+    return isEmpty(input)
+        ? false
+        : [...input].every((char) => {
+            const isRoma = isCharRomaji(char);
+            return !augmented ? isRoma : isRoma || allowed.test(char);
+        });
+}
+
+/**
+ * Tests a character. Returns true if the character is [Katakana](https://en.wikipedia.org/wiki/Katakana).
+ * @param  {String} char character string to test
+ * @return {Boolean}
+ */
+function isCharKatakana(char = '') {
+    return isCharInRange(char, KATAKANA_START, KATAKANA_END);
+}
+
+/**
+ * Test if `input` is [Hiragana](https://en.wikipedia.org/wiki/Hiragana)
+ * @param  {String} [input=''] text
+ * @return {Boolean} true if all [Hiragana](https://en.wikipedia.org/wiki/Hiragana)
+ * @example
+ * isHiragana('げーむ')
+ * // => true
+ * isHiragana('A')
+ * // => false
+ * isHiragana('あア')
+ * // => false
+ */
+function isHiragana(input = '') {
+    if (isEmpty(input))
+        return false;
+    return [...input].every(isCharHiragana);
+}
+
+/**
+ * Test if `input` is [Katakana](https://en.wikipedia.org/wiki/Katakana)
+ * @param  {String} [input=''] text
+ * @return {Boolean} true if all [Katakana](https://en.wikipedia.org/wiki/Katakana)
+ * @example
+ * isKatakana('ゲーム')
+ * // => true
+ * isKatakana('あ')
+ * // => false
+ * isKatakana('A')
+ * // => false
+ * isKatakana('あア')
+ * // => false
+ */
+function isKatakana(input = '') {
+    if (isEmpty(input))
+        return false;
+    return [...input].every(isCharKatakana);
+}
+
+/**
+ * Returns true if char is '々'
+ * @param  {String} char to test
+ * @return {Boolean}
+ */
+function isCharIterationMark(char = '') {
+    if (isEmpty(char))
+        return false;
+    return char.charCodeAt(0) === KANJI_ITERATION_MARK;
+}
+
+/**
+ * Tests a character. Returns true if the character is a CJK ideograph (kanji).
+ * @param  {String} char character string to test
+ * @return {Boolean}
+ */
+function isCharKanji(char = '') {
+    return isCharInRange(char, KANJI_START, KANJI_END) || isCharIterationMark(char);
+}
+
+/**
+ * Tests if `input` is [Kanji](https://en.wikipedia.org/wiki/Kanji) ([Japanese CJK ideographs](https://en.wikipedia.org/wiki/CJK_Unified_Ideographs))
+ * @param  {String} [input=''] text
+ * @return {Boolean} true if all [Kanji](https://en.wikipedia.org/wiki/Kanji)
+ * @example
+ * isKanji('刀')
+ * // => true
+ * isKanji('切腹')
+ * // => true
+ * isKanji('勢い')
+ * // => false
+ * isKanji('あAア')
+ * // => false
+ * isKanji('🐸')
+ * // => false
+ */
+function isKanji(input = '') {
+    if (isEmpty(input))
+        return false;
+    return [...input].every(isCharKanji);
+}
+
+/**
+ * Test if `input` contains a mix of [Romaji](https://en.wikipedia.org/wiki/Romaji) *and* [Kana](https://en.wikipedia.org/wiki/Kana), defaults to pass through [Kanji](https://en.wikipedia.org/wiki/Kanji)
+ * @param  {String} input text
+ * @param  {{ passKanji: Boolean}} [options={ passKanji: true }] optional config to pass through kanji
+ * @return {Boolean} true if mixed
+ * @example
+ * isMixed('Abあア'))
+ * // => true
+ * isMixed('お腹A')) // ignores kanji by default
+ * // => true
+ * isMixed('お腹A', { passKanji: false }))
+ * // => false
+ * isMixed('ab'))
+ * // => false
+ * isMixed('あア'))
+ * // => false
+ */
+function isMixed(input = '', options = { passKanji: true }) {
+    const chars = [...input];
+    let hasKanji = false;
+    if (!options.passKanji) {
+        hasKanji = chars.some(isKanji);
+    }
+    return (chars.some(isHiragana) || chars.some(isKatakana)) && chars.some(isRomaji) && !hasKanji;
+}
+
 let kanaToHepburnMap = null;
 /* eslint-disable */
 // prettier-ignore
@@ -1263,6 +1442,44 @@ memoizeOne((romanization, customRomajiMapping) => {
     }
     return map;
 }, dequal);
+
+/**
+ * Tests a character. Returns true if the character is considered English punctuation.
+ * @param  {String} char character string to test
+ * @return {Boolean}
+ */
+function isCharEnglishPunctuation(char = '') {
+    if (isEmpty(char))
+        return false;
+    return EN_PUNCTUATION_RANGES.some(([start, end]) => isCharInRange(char, start, end));
+}
+
+/**
+ * Convert input to [Katakana](https://en.wikipedia.org/wiki/Katakana)
+ * @param  {String} [input=''] text
+ * @param  {DefaultOptions} [options=defaultOptions]
+ * @return {String} converted text
+ * @example
+ * toKatakana('toukyou, おおさか')
+ * // => 'トウキョウ、　オオサカ'
+ * toKatakana('only かな', { passRomaji: true })
+ * // => 'only カナ'
+ * toKatakana('wi')
+ * // => 'ウィ'
+ * toKatakana('wi', { useObsoleteKana: true })
+ * // => 'ヰ'
+ */
+function toKatakana(input = '', options = {}) {
+    const mergedOptions = mergeWithDefaultOptions(options);
+    if (mergedOptions.passRomaji) {
+        return hiraganaToKatakana(input);
+    }
+    if (isMixed(input) || isRomaji(input) || isCharEnglishPunctuation(input)) {
+        const hiragana = toKana(input.toLowerCase(), mergedOptions);
+        return hiraganaToKatakana(hiragana);
+    }
+    return hiraganaToKatakana(input);
+}
 
 var Module = (function() {
   var _scriptDir = import.meta.url;
@@ -7216,6 +7433,56 @@ var __decorate = (undefined && undefined.__decorate) || function (decorators, ta
     for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+/**
+ * Attempts to match `str` as a concatenation of a subsequence of `tokens[i].reading`.
+ * If successful, marks those tokens and returns the list of token-indices that were
+ * flipped from false→true. If it matches only already-marked tokens, returns { matched: [] }.
+ * If no such segmentation exists, **returns { matched: null } and leaves every token.marked unchanged**.
+ */
+function markTokens(tokens, str) {
+    str = toKatakana(str);
+    // (1) First search—no mutations yet
+    const matchIndices = findMatch(tokens, str, 0, 0);
+    if (!matchIndices) {
+        // (2) On failure, we bail out immediately—tokens[].marked is untouched
+        return { matched: null };
+    }
+    // (3) On success, flip only the newly-matched tokens
+    const newlyMarked = [];
+    for (const idx of matchIndices) {
+        if (!tokens[idx].marked) {
+            tokens[idx].marked = true;
+            newlyMarked.push(idx);
+        }
+    }
+    return { matched: newlyMarked };
+}
+/**
+ * Recursive helper.
+ * @param startIdx  index in tokens[] to start searching from
+ * @param pos       character position in str to match next
+ * @returns         an array of token-indices forming a match, or null if none
+ */
+function findMatch(tokens, str, startIdx, pos) {
+    // If we've consumed the entire string, that's a successful (empty) tail match
+    if (pos === str.length) {
+        return [];
+    }
+    // Try each token at or after startIdx
+    for (let i = startIdx; i < tokens.length; i++) {
+        const { reading } = tokens[i];
+        // Does the string at position pos begin with this token's reading?
+        if (str.startsWith(reading, pos)) {
+            // If so, recurse to match the remainder from i+1 and pos+reading.length
+            const rest = findMatch(tokens, str, i + 1, pos + reading.length);
+            if (rest) {
+                return [i, ...rest];
+            }
+        }
+    }
+    // No token here leads to a full match
+    return null;
+}
 let KanaGame = class KanaGame extends i {
     constructor() {
         super(...arguments);
@@ -7370,4 +7637,4 @@ KanaGame = __decorate([
     t('kana-game')
 ], KanaGame);
 
-export { KanaGame };
+export { KanaGame, markTokens };
