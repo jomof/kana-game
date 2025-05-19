@@ -214,6 +214,33 @@ export class KanaGame extends LitElement {
       box-shadow: 0 0 0 2px tomato;
     }
 
+    :host([state="completed"]) .next-button {
+      display: block;            /* show when completed */
+    }
+
+    :host([state="completed"]) .next-button:hover {
+      color: #000;
+    }
+
+    .answer-box {
+      position: relative;
+      width: 100%;
+    }
+
+    .next-button {
+      position: absolute;
+      top: 50%;
+      right: 0.5em;
+      transform: translateY(-50%);
+      border: none;
+      background: none;
+      font-size: 1.5em;
+      line-height: 1;
+      cursor: pointer;
+      color: #444;
+      display: none;             /* hidden by default */
+    }
+
     span#english {
       font-family: 'Noto Sans JP', sans-serif;
       font-size: 22px;
@@ -229,6 +256,12 @@ export class KanaGame extends LitElement {
     }
 
     input#kana-input {
+      box-sizing: border-box;
+      width: 100%;
+      padding-left: 2.5em;
+      padding-right: 2.5em;      /* make room for the arrow */
+      border-radius: 8px;
+
       font-family: 'Noto Sans JP', sans-serif;
       font-size: 22px;
       line-height: 33px;
@@ -249,8 +282,15 @@ export class KanaGame extends LitElement {
         border: solid 1px #444;
       }
 
+      :host([state="completed"]) .next-button:hover {
+        color: #eee;
+      }
+
+      .next-button {
+        color: #ccc;
+      }
+
       span#english {
-        /* if you want a different heading color in dark */
         color: #eee;
       }
 
@@ -318,14 +358,28 @@ export class KanaGame extends LitElement {
     return html`
       <span id="english" part="english">${this.english}</span><br />
       <span id="skeleton" part="skeleton">${this.skeleton}</span><br />
-      <input
-        id="kana-input"
-        part="kana-input"
-        type="text"
-        @keydown=${this.handleKeydown}
-        placeholder="答え"
-      />
+      <div class="answer-box">
+        <input
+          id="kana-input"
+          part="kana-input"
+          type="text"
+          .readOnly=${this.state === 'completed'}
+          @keydown=${this.handleKeydown}
+          placeholder="答え"
+        />
+        <button
+          class="next-button"
+          @click=${this._onNextClick}
+          aria-label="Next question"
+        >
+          ➔
+        </button>
+      </div>
     `;
+  }
+
+  private _onNextClick() {
+    this.dispatchEvent(new CustomEvent('next-question'));
   }
 
   private _onMecabReady() {
@@ -334,31 +388,33 @@ export class KanaGame extends LitElement {
   }
 
   private handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
-      if (this.question === null) {
-        return;
-      }
-      const value = (e.target as HTMLInputElement).value;
-      const group = this.question!.parsed as Token[][];
-      const katakana = wanakana.toKatakana(value);
-      const marked = markTokens(group, katakana);
-      const best = selectBestGroup(group);
-      if (anyMarked(marked)) {
-        this.kana.value = '';
-      }
-      let showPuncuation = false;
-      if (isCompleted(best!)) {
-        showPuncuation = true;
-        this.kana.blur();
-        this.state = 'completed';
-      } else if (!anyMarked(marked)) {
-        this.state = 'error';
-      } else {
-        this.state = 'normal';
-      }
-
-      this.skeleton = formatTokenGroup(best!, showPuncuation);
+    if (this.question === null) return;
+    if (e.key !== 'Enter') return;
+    if (this.state === 'completed') {
+      e.preventDefault();
+      this._onNextClick();
+      return;
     }
+
+    const value = (e.target as HTMLInputElement).value;
+    const group = this.question!.parsed as Token[][];
+    const katakana = wanakana.toKatakana(value);
+    const marked = markTokens(group, katakana);
+    const best = selectBestGroup(group);
+    if (anyMarked(marked)) {
+      this.kana.value = '';
+    }
+    let showPuncuation = false;
+    if (isCompleted(best!)) {
+      showPuncuation = true;
+      this.state = 'completed';
+    } else if (!anyMarked(marked)) {
+      this.state = 'error';
+    } else {
+      this.state = 'normal';
+    }
+
+    this.skeleton = formatTokenGroup(best!, showPuncuation);
   }
 }
 

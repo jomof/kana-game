@@ -38,17 +38,25 @@ suite('kana-game', () => {
         part="skeleton">
       </span>
       <br>
-      <input
-       autocapitalize="none"
-       autocomplete="off"
-       autocorrect="off"
-       id="kana-input"
-       lang="ja"
-       part="kana-input"
-       placeholder="答え"
-       spellcheck="false"
-       type="text"
-      >
+      <div class="answer-box">
+        <input
+        autocapitalize="none"
+        autocomplete="off"
+        autocorrect="off"
+        id="kana-input"
+        lang="ja"
+        part="kana-input"
+        placeholder="答え"
+        spellcheck="false"
+        type="text"
+        >
+        <button
+          aria-label="Next question"
+          class="next-button"
+        >
+          ➔
+        </button>
+      </div>
     `;
   }
 
