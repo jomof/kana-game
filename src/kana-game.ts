@@ -192,7 +192,7 @@ export class KanaGame extends LitElement {
       /* default (light) look */
       border: solid 1px gray;
       padding: 16px;
-      max-width: 800px;
+      max-width: 800px
       background-color: #fff;
       color: #000;
     }
@@ -200,6 +200,7 @@ export class KanaGame extends LitElement {
     :host([state='completed']) span#skeleton {
       color: green;
     }
+
 
     :host([state='normal']) input#kana-input {
       border: solid 1px #ccc;
@@ -380,7 +381,7 @@ export class KanaGame extends LitElement {
   override render() {
     return html`
       <span id="english" part="english">${this.english}</span><br />
-      <span id="skeleton" part="skeleton">${this.skeleton}</span><br />
+      <span id="skeleton" part="skeleton">${this.renderSkeleton()}</span><br />
       <div class="answer-box">
         <input
           id="kana-input"
@@ -400,6 +401,29 @@ export class KanaGame extends LitElement {
         </button>
       </div>
     `;
+  }
+
+  private renderSkeleton() {
+    if (!this.question) return html``;
+    const groups = this.question.parsed as Token[][];
+    const best = selectBestGroup(groups) || [];
+
+    return html`${best.map(t => {
+      // skip unmarked punctuation unless we're in completed state
+      if (t.pos_detail1 === '句点' && this.state !== 'completed') {
+        return ''; 
+      }
+
+      // unrevealed → underscores
+      if (!t.marked && this.state !== 'completed') {
+        return html`<span class="mask">${'_'.repeat(t.word.length)}</span>`;
+      }
+
+      // revealed → ruby with furigana
+      const kana = wanakana.toHiragana(t.reading);
+      if (kana === t.word) return html`${kana}`;
+      return html`<ruby><rb>${t.word}</rb><rt>${kana}</rt></ruby>`;
+    })}`;
   }
 
   private _onNextClick() {
