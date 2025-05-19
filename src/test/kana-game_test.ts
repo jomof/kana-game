@@ -102,7 +102,7 @@ suite('kana-game', () => {
     await model.game.updateComplete;
   }
 
-   async function sendBackspace(model: Model) {
+  async function sendBackspace(model: Model) {
     const input = model.input;
     // Set the input value to a romaji string
     input.value = input.value.slice(0, -1);
