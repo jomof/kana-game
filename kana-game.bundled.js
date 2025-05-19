@@ -7672,6 +7672,9 @@ KanaGame.styles = i$3 `
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
+      height: 100%;
+      min-height: 300px;
 
       /* allow both light & dark; UA picks based on prefers-color-scheme */
       color-scheme: light dark;
@@ -7713,6 +7716,7 @@ KanaGame.styles = i$3 `
     }
 
     .answer-box {
+      margin-top: auto;
       position: relative;
       width: 100%;
     }
