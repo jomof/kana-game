@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {KanaGame, Token, markTokens, Question} from '../kana-game.js';
-import Mecab from 'mecab-wasm';
+import {KanaGame, Token, markTokens, Question, tokenize} from '../kana-game.js';
 import {fixture, assert} from '@open-wc/testing';
 import {html} from 'lit/static-html.js';
 
@@ -143,16 +142,10 @@ suite('kana-game', () => {
     assert.equal(game.skeleton, '');
   });
 
-  test('notifies Mecab', async () => {
-    const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
-    await el.updateComplete;
-    assert.equal(el.mecabInitialized, true);
-  });
-
   test('check supplyQuestion', async () => {
     const model = await getModel();
     const game = model.game;
-    game.supplyQuestion({
+    await game.supplyQuestion({
       english: 'I am a teacher.',
       japanese: ['先生です。', '先生だ。'],
       parsed: [],
@@ -169,7 +162,7 @@ suite('kana-game', () => {
   });
 
   test('mark tokens 1', async () => {
-    const tokens = Mecab.query('私は学生です。') as Token[];
+    const tokens = await tokenize('私は学生です。');
     const result = markTokens(tokens, 'ワタシハガクセイデス');
     assert.deepEqual(result.matched, [0, 1, 2, 3]);
     assert.isTrue(tokens[0].marked);
@@ -180,7 +173,7 @@ suite('kana-game', () => {
   });
 
   test('mark tokens 2', async () => {
-    const tokens = Mecab.query('私は学生です。') as Token[];
+    const tokens = await tokenize('私は学生です。');
     markTokens(tokens, 'ワタシ');
     markTokens(tokens, 'ハ');
     markTokens(tokens, 'ガクセイ');
@@ -193,7 +186,7 @@ suite('kana-game', () => {
   });
 
   test('mark tokens 3', async () => {
-    const tokens = [Mecab.query('私は学生です。') as Token[]];
+    const tokens = [await tokenize('私は学生です。')];
     assert.deepEqual(markTokens(tokens, 'ワタシハ')[0].matched, [0, 1]);
     assert.deepEqual(markTokens(tokens, 'ハガクセイ')[0].matched, [2]);
     assert.deepEqual(markTokens(tokens, 'ガクセイデス')[0].matched, [3]);
@@ -207,8 +200,8 @@ suite('kana-game', () => {
 
   test('mark tokens 3.1', async () => {
     const tokens = [
-      Mecab.query('私は学生です。') as Token[],
-      Mecab.query('私は学生だ。') as Token[],
+      await tokenize('私は学生です。'),
+      await tokenize('私は学生だ。'),
     ];
     const desuMarked = markTokens(tokens, 'デス');
 
@@ -222,7 +215,7 @@ suite('kana-game', () => {
   });
 
   test('mark tokens 4', async () => {
-    const tokens = Mecab.query('私は学生です。') as Token[];
+    const tokens = await tokenize('私は学生です。');
     assert.isNull(markTokens(tokens, 'ガ').matched);
     assert.deepEqual(markTokens(tokens, 'ハ').matched, [1]);
     assert.deepEqual(markTokens(tokens, 'ガクセイデス').matched, [2, 3]);
@@ -357,7 +350,7 @@ suite('kana-game', () => {
   test('run to correct completion', async () => {
     const model = await getModel();
     const game = model.game;
-    game.supplyQuestion({
+    await game.supplyQuestion({
       english: 'I am a student.',
       japanese: ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
     } as Question);
@@ -375,7 +368,7 @@ suite('kana-game', () => {
   test('run to error then return to normal', async () => {
     const model = await getModel();
     const game = model.game;
-    game.supplyQuestion({
+    await game.supplyQuestion({
       english: 'I am a student.',
       japanese: ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
     } as Question);
@@ -387,5 +380,21 @@ suite('kana-game', () => {
     await sendBackspace(model); // Backspace returns to normal
     assert.equal(game.state, 'normal');
     assert.equal(game.skeleton, '____');
+  });
+
+  test('test book', async () => {
+    const model = await getModel();
+    const game = model.game;
+    await game.supplyQuestion({
+      english: 'I am reading a book right now.',
+      japanese: [
+        '今 本 を読んでいる。',
+      ],
+    } as Question);
+    await game.updateComplete;
+    assert.equal(game.skeleton, '________');
+    await sendInput(model, 'imahonwoyondeiru'); // incorrect input
+    assert.equal(game.skeleton, '今本を読んでいる。');
+    assert.equal(game.state, 'completed');
   });
 });

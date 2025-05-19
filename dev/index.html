@@ -70,6 +70,56 @@
           english: 'I am a teacher.',
           japanese: ['先生です。', '先生だ。'],
         },
+        {
+          id: 3,
+          english: 'I eat sushi every day.',
+          japanese: [
+            '私は毎日寿司を食べます。',
+            '毎日寿司を食べます。',
+            '私は毎日寿司を食べる。',
+            '毎日寿司を食べる。',
+          ],
+        },
+        {
+          id: 4,
+          english: 'I can speak Japanese.',
+          japanese: [
+            '私は日本語を話すことができます。',
+            '日本語を話すことができる。',
+            '日本語が話せます。',
+            '日本語が話せる。',
+          ],
+        },
+        {
+          id: 5,
+          english: 'I went to Tokyo last year.',
+          japanese: [
+            '私は去年東京に行きました。',
+            '去年東京に行きました。',
+            '私は去年東京に行った。',
+            '去年東京に行った。',
+          ],
+        },
+        {
+          id: 6,
+          english: 'I am reading a book right now.',
+          japanese: [
+            '私 は 今 本 を読んでいます。',
+            '今 本 を読んでいる。',
+            '本 を読んでいます。',
+            '本 読んでる。',
+          ],
+        },
+        {
+          id: 7,
+          english: 'I want to go to Japan.',
+          japanese: [
+            '私は日本に行きたいです。',
+            '日本に行きたいです。',
+            '日本に行きたい。',
+            '日本に行きたいんだ。',
+          ],
+        },
       ];
       window.addEventListener('DOMContentLoaded', async () => {
         const game = document.querySelector('kana-game');
@@ -77,10 +127,10 @@
         game.addEventListener(
           'properties-changed',
           () =>
-            (debug.textContent = `state: ${game.state}\nskeleton: ${game.skeleton}`)
+            debug.textContent = `state: ${game.state}\nskeleton: ${game.skeleton}\nanswers (hiragana): ${game.answerHiragana}`
         );
         await game.updateComplete;
-        let current = 0;
+        let current = 6;
         game.supplyQuestion(questions[current]);
 
         game.addEventListener('next-question', () => {

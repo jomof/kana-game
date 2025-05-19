@@ -41,8 +41,8 @@
   "author": "Jomo Fisher",
   "license": "BSD-3-Clause",
   "dependencies": {
+    "@patdx/kuromoji": "^1.0.4",
     "lit": "^3.2.0",
-    "mecab-wasm": "^1.0.3",
     "wanakana": "^5.3.1"
   },
   "devDependencies": {

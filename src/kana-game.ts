@@ -7,15 +7,36 @@
 import {LitElement, PropertyValues, html, css} from 'lit';
 import {customElement, property, query} from 'lit/decorators.js';
 import * as wanakana from 'wanakana';
-import Mecab, {MecabToken} from 'mecab-wasm';
+import * as kuromoji from '@patdx/kuromoji'
+
+const loader: kuromoji.LoaderConfig = {
+  async loadArrayBuffer(url: string): Promise<ArrayBufferLike> {
+    url = url.replace(/\.gz$/, '');
+    const res = await fetch(
+      'https://cdn.jsdelivr.net/npm/@aiktb/kuromoji@1.0.2/dict/' + url
+    );
+    if (!res.ok) {
+      throw new Error(`Failed to fetch ${url}: ${res.status}`);
+    }
+    return res.arrayBuffer();
+  },
+};
+
+const tokenizerPromise = new kuromoji.TokenizerBuilder({ loader }).build();
+
+export function tokenize(
+  text: string
+): Promise<Token[]> {
+  return tokenizerPromise.then((tokenizer)=>tokenizer.tokenize(text) as Token[]);
+}
 
 export interface Question {
   english: string;
   japanese: string[];
-  parsed: MecabToken[][];
+  parsed: Token[][];
 }
 
-export interface Token extends MecabToken {
+export interface Token extends kuromoji.IpadicFeatures {
   marked: boolean | undefined;
 }
 
@@ -32,7 +53,7 @@ function findMatch(
 ): number[] | null {
   if (pos === str.length) return [];
   for (let i = startIdx; i < tokens.length; i++) {
-    const r = tokens[i].reading;
+    const r = tokens[i].reading!;
     if (str.startsWith(r, pos)) {
       const rest = findMatch(tokens, str, i + 1, pos + r.length);
       if (rest) return [i, ...rest];
@@ -143,9 +164,9 @@ function selectBestGroup(groups: Token[][]): Token[] | null {
 
 /**
  * Formats a single Token[] into a masked string:
- *  – If `t.marked === true`, emits `t.word`.
- *  – If unmarked and `t.pos_detail1 === "句点"`, emits `""` (omits punctuation).
- *  – Otherwise emits `"_"` repeated to match `t.word.length`.
+ *  – If `t.marked === true`, emits `t.surface`.
+ *  – If unmarked and `t.pos_detail1 === "記号"`, emits `""` (omits punctuation).
+ *  – Otherwise emits `"_"` repeated to match `t.surface.length`.
  *
  * @param group  A Token[] to format.
  * @returns      The masked string.
@@ -154,9 +175,9 @@ function formatTokenGroup(group: Token[], includePunctuation: Boolean): string {
   return group
     .map((t) => {
       if (t.marked || includePunctuation) {
-        return t.word;
-      } else if (t.pos_detail1 !== '句点') {
-        return '_'.repeat(t.word.length);
+        return t.surface_form;
+      } else if (t.pos !== '記号') {
+        return '_'.repeat(t.surface_form.length);
       } else {
         // unmarked punctuation → omit entirely
         return '';
@@ -167,12 +188,12 @@ function formatTokenGroup(group: Token[], includePunctuation: Boolean): string {
 
 /**
  * Returns true if every non-punctuation token in the array is marked.
- * Punctuation tokens (where pos_detail1 === "句点") are ignored.
+ * Punctuation tokens (where pos_detail1 === "記号") are ignored.
  *
  * @param tokens  Array of Token objects to check.
  */
 function isCompleted(tokens: Token[]): boolean {
-  return tokens.every((t) => t.pos_detail1 === '句点' || t.marked);
+  return tokens.every((t) => t.pos === '記号' || t.marked);
 }
 
 @customElement('kana-game')
@@ -247,7 +268,7 @@ export class KanaGame extends LitElement {
 
     span#english {
       font-family: 'Noto Sans JP', sans-serif;
-      font-size: 22px;
+      font-size: 30px;
       text-align: center;
       width: 100%;
     }
@@ -316,12 +337,6 @@ export class KanaGame extends LitElement {
     }
   `;
 
-  /**
-   * Whether mecab has been initialized.
-   */
-  @property({type: Boolean})
-  mecabInitialized = false;
-
   @property({type: String})
   english = 'I live in Seattle.';
 
@@ -336,23 +351,25 @@ export class KanaGame extends LitElement {
 
   question: Question | null = null;
 
-  private audioCtx = new (window.AudioContext ||
-    (window as any).webkitAudioContext)();
+  answerHiragana : string[] = [];
 
   /**
    * Called to supply a new question to the game.
    * @param question
    */
-  supplyQuestion(question: Question) {
+  async supplyQuestion(question: Question) {
     this.question = structuredClone(question);
+    this.question.parsed = [];
     this.english = this.question.english;
-    this.question.parsed = this.question.japanese.map(Mecab.query);
-
+    const tokenizer = await tokenizerPromise;
+    this.question.parsed = this.question.japanese
+      .map((it) => tokenizer.tokenize(it).filter((t)=>t.surface_form !== ' ') as Token[]);
     const group = this.question!.parsed as Token[][];
     const best = selectBestGroup(group);
     this.skeleton = formatTokenGroup(best!, false);
     this.state = 'normal';
     this.kana.focus();
+    this._updateDebugFields();
   }
 
   override firstUpdated() {
@@ -362,6 +379,12 @@ export class KanaGame extends LitElement {
     }
   }
 
+  override connectedCallback() {
+    super.connectedCallback();
+    // fire & forget: warm up the tokenizer
+    tokenizerPromise.catch((e) => console.error('tokenizer failed to load', e));
+  }
+
   protected override updated(changed: PropertyValues) {
     super.updated(changed);
     this.dispatchEvent(
@@ -369,15 +392,6 @@ export class KanaGame extends LitElement {
         detail: [...changed.keys()],
       })
     );
-  }
-
-  protected override async getUpdateComplete(): Promise<boolean> {
-    const result = await super.getUpdateComplete();
-    if (result) {
-      await Mecab.waitReady();
-      this._onMecabReady();
-    }
-    return result;
   }
 
   override render() {
@@ -412,29 +426,24 @@ export class KanaGame extends LitElement {
 
     return html`${best.map((t) => {
       // skip unmarked punctuation unless we're in completed state
-      if (t.pos_detail1 === '句点' && this.state !== 'completed') {
+      if (t.pos === '記号' && this.state !== 'completed') {
         return '';
       }
 
       // unrevealed → underscores
       if (!t.marked && this.state !== 'completed') {
-        return html`<span class="mask">${'_'.repeat(t.word.length)}</span>`;
+        return html`<span class="mask">${'_'.repeat(t.surface_form.length)}</span>`;
       }
 
       // revealed → ruby with furigana
       const kana = wanakana.toHiragana(t.reading);
-      if (kana === t.word) return html`${kana}`;
-      return html`<ruby><rb>${t.word}</rb><rt>${kana}</rt></ruby>`;
+      if (kana === t.surface_form) return html`${kana}`;
+      return html`<ruby><rb>${t.surface_form}</rb><rt>${kana}</rt></ruby>`;
     })}`;
   }
 
   private _onNextClick() {
     this.dispatchEvent(new CustomEvent('next-question'));
-  }
-
-  private _onMecabReady() {
-    this.mecabInitialized = true;
-    this.dispatchEvent(new CustomEvent('mecab-ready'));
   }
 
   private handleInput(_: InputEvent) {
@@ -457,6 +466,7 @@ export class KanaGame extends LitElement {
     const group = this.question!.parsed as Token[][];
     const katakana = wanakana.toKatakana(value);
     const marked = markTokens(group, katakana);
+    this._updateDebugFields();
     const best = selectBestGroup(group);
     if (anyMarked(marked)) {
       this.kana.value = '';
@@ -466,9 +476,6 @@ export class KanaGame extends LitElement {
       showPuncuation = true;
       this.state = 'completed';
     } else if (!anyMarked(marked)) {
-      if (this.state !== 'error') {
-        this.playBuzzer();
-      }
       this.state = 'error';
     } else {
       this.state = 'normal';
@@ -477,32 +484,20 @@ export class KanaGame extends LitElement {
     this.skeleton = formatTokenGroup(best!, showPuncuation);
   }
 
-  private playBuzzer() {
-    const now = this.audioCtx.currentTime;
-    const duration = 0.2; // 200 ms buzzer
+  private _updateDebugFields() {
+     if (!this.question) return;
 
-    // 1) Oscillator for the tone
-    const osc = this.audioCtx.createOscillator();
-    osc.type = 'sawtooth'; // more harmonics → buzzy
-    osc.frequency.setValueAtTime(100, now); // start up high
-    osc.frequency.exponentialRampToValueAtTime(
-      10, // slide down to low
-      now + duration
+    // Take each token‐group (one per possible answer),
+    // turn every token’s katakana reading into hiragana,
+    // join them with spaces, and store in answerHiragana.
+    const groups = this.question.parsed as Token[][];
+    this.answerHiragana = groups.map(group =>
+      group
+        .map(token => wanakana.toHiragana(token.reading))
+        .join(' ')
     );
-
-    // 2) Envelope for volume
-    const gain = this.audioCtx.createGain();
-    gain.gain.setValueAtTime(0.4, now); // decent loudness
-    gain.gain.exponentialRampToValueAtTime(
-      0.001, // ramp down cleanly
-      now + duration
-    );
-
-    // 3) Hook up and play
-    osc.connect(gain).connect(this.audioCtx.destination);
-    osc.start(now);
-    osc.stop(now + duration);
   }
+
 }
 
 declare global {
