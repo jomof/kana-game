@@ -7434,54 +7434,121 @@ var __decorate = (undefined && undefined.__decorate) || function (decorators, ta
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 /**
- * Attempts to match `str` as a concatenation of a subsequence of `tokens[i].reading`.
- * If successful, marks those tokens and returns the list of token-indices that were
- * flipped from false→true. If it matches only already-marked tokens, returns { matched: [] }.
- * If no such segmentation exists, **returns { matched: null } and leaves every token.marked unchanged**.
+ * Recursive helper (unchanged).
+ * @returns an array of token‐indices if `str` can be covered by a subsequence
+ *          of `tokens[i].reading`, or `null` otherwise.
+ */
+function findMatch(tokens, str, startIdx, pos) {
+    if (pos === str.length)
+        return [];
+    for (let i = startIdx; i < tokens.length; i++) {
+        const r = tokens[i].reading;
+        if (str.startsWith(r, pos)) {
+            const rest = findMatch(tokens, str, i + 1, pos + r.length);
+            if (rest)
+                return [i, ...rest];
+        }
+    }
+    return null;
+}
+/**
+ * If given a flat Token[], tries to match & flip exactly as before.
+ * If given Token[][], first picks only those sub‐arrays with the
+ * **highest current count** of `marked===true`, and runs the flat logic
+ * on them; all others return `{ matched: null }`.
  */
 function markTokens(tokens, str) {
-    str = toKatakana(str);
-    // (1) First search—no mutations yet
-    const matchIndices = findMatch(tokens, str, 0, 0);
+    // ——— Nested case ———
+    if (tokens.length > 0 && Array.isArray(tokens[0])) {
+        const groups = tokens;
+        // 1) count how many are already marked in each subgroup
+        const markedCounts = groups.map((g) => g.reduce((n, t) => n + (t.marked ? 1 : 0), 0));
+        const maxCount = Math.max(...markedCounts);
+        // 2) only process those at maxCount
+        return groups.map((g, i) => {
+            if (markedCounts[i] === maxCount) {
+                // recurse into flat logic
+                return markTokens(g, str);
+            }
+            else {
+                // skip marking entirely
+                return { matched: null };
+            }
+        });
+    }
+    // ——— Flat case ———
+    const flat = tokens;
+    const matchIndices = findMatch(flat, str, 0, 0);
     if (!matchIndices) {
-        // (2) On failure, we bail out immediately—tokens[].marked is untouched
         return { matched: null };
     }
-    // (3) On success, flip only the newly-matched tokens
     const newlyMarked = [];
     for (const idx of matchIndices) {
-        if (!tokens[idx].marked) {
-            tokens[idx].marked = true;
+        if (!flat[idx].marked) {
+            flat[idx].marked = true;
             newlyMarked.push(idx);
         }
     }
     return { matched: newlyMarked };
 }
 /**
- * Recursive helper.
- * @param startIdx  index in tokens[] to start searching from
- * @param pos       character position in str to match next
- * @returns         an array of token-indices forming a match, or null if none
+ * Returns true if any token was newly marked.
  */
-function findMatch(tokens, str, startIdx, pos) {
-    // If we've consumed the entire string, that's a successful (empty) tail match
-    if (pos === str.length) {
-        return [];
-    }
-    // Try each token at or after startIdx
-    for (let i = startIdx; i < tokens.length; i++) {
-        const { reading } = tokens[i];
-        // Does the string at position pos begin with this token's reading?
-        if (str.startsWith(reading, pos)) {
-            // If so, recurse to match the remainder from i+1 and pos+reading.length
-            const rest = findMatch(tokens, str, i + 1, pos + reading.length);
-            if (rest) {
-                return [i, ...rest];
-            }
+function anyMarked(result) {
+    return result.some((r) => r.matched !== null && r.matched.length > 0);
+}
+/**
+ * Selects the “best” token sequence from an array of candidate groups.
+ * Criteria:
+ *  1. Highest number of tokens with `marked === true`
+ *  2. (Tiebreaker) Lowest number of tokens with `marked === false`
+ *
+ * @param groups  An array of Token[] candidate sequences.
+ * @returns       The best Token[] (or `null` if `groups` is empty).
+ */
+function selectBestGroup(groups) {
+    if (groups.length === 0)
+        return null;
+    let bestGroup = groups[0];
+    let bestMarked = bestGroup.filter((t) => t.marked).length;
+    let bestUnmarked = bestGroup.length - bestMarked;
+    for (let i = 1; i < groups.length; i++) {
+        const grp = groups[i];
+        const markedCount = grp.filter((t) => t.marked).length;
+        const unmarkedCount = grp.length - markedCount;
+        if (markedCount > bestMarked ||
+            (markedCount === bestMarked && unmarkedCount < bestUnmarked)) {
+            bestGroup = grp;
+            bestMarked = markedCount;
+            bestUnmarked = unmarkedCount;
         }
     }
-    // No token here leads to a full match
-    return null;
+    return bestGroup;
+}
+/**
+ * Formats a single Token[] into a masked string:
+ *  – If `t.marked === true`, emits `t.word`.
+ *  – If unmarked and `t.pos_detail1 === "句点"`, emits `""` (omits punctuation).
+ *  – Otherwise emits `"_"` repeated to match `t.word.length`.
+ *
+ * @param group  A Token[] to format.
+ * @returns      The masked string.
+ */
+function formatTokenGroup(group) {
+    return group
+        .map((t) => {
+        if (t.marked) {
+            return t.word;
+        }
+        else if (t.pos_detail1 !== '句点') {
+            return '_'.repeat(t.word.length);
+        }
+        else {
+            // unmarked punctuation → omit entirely
+            return '';
+        }
+    })
+        .join('');
 }
 let KanaGame = class KanaGame extends i {
     constructor() {
@@ -7491,17 +7558,20 @@ let KanaGame = class KanaGame extends i {
          */
         this.mecabInitialized = false;
         this.english = 'I live in Seattle.';
-        this.skeleton = '_';
+        this.skeleton = '';
         this.question = null;
     }
+    /**
+     * Called to supply a new question to the game.
+     * @param question
+     */
     supplyQuestion(question) {
         this.question = structuredClone(question);
         this.english = this.question.english;
         this.question.parsed = this.question.japanese.map(Mecab.query);
-        this.skeleton = '';
-        for (const parsed of this.question.parsed) {
-            this.skeleton += '_'.repeat(parsed[0].reading.length);
-        }
+        const group = this.question.parsed;
+        const best = selectBestGroup(group);
+        this.skeleton = formatTokenGroup(best);
     }
     firstUpdated() {
         if (this.kana) {
@@ -7536,11 +7606,17 @@ let KanaGame = class KanaGame extends i {
     }
     handleKeydown(e) {
         if (e.key === 'Enter') {
+            if (this.question === null)
+                return;
             const value = e.target.value;
-            if (this.skeleton[0] === '_')
-                this.skeleton = '';
-            this.skeleton += value;
-            this.kana.value = '';
+            const group = this.question.parsed;
+            const katakana = toKatakana(value);
+            const marked = markTokens(group, katakana);
+            const best = selectBestGroup(group);
+            this.skeleton = formatTokenGroup(best);
+            if (anyMarked(marked)) {
+                this.kana.value = '';
+            }
         }
     }
 };
