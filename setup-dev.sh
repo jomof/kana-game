@@ -17,6 +17,5 @@ sudo apt-get install -y \
     libhyphen0 \
     libmanette-0.2-0 \
     libgles2
-echo postInstall--------------------------------------------------------
-sudo ./postInstall/postInstall.sh
+
 

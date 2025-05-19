@@ -127,7 +127,7 @@
         game.addEventListener(
           'properties-changed',
           () =>
-            debug.textContent = `state: ${game.state}\nskeleton: ${game.skeleton}\nanswers (hiragana): ${game.answerHiragana}`
+            (debug.textContent = `state: ${game.state}\nskeleton: ${game.skeleton}\nanswers (hiragana): ${game.answerHiragana}`)
         );
         await game.updateComplete;
         let current = 6;

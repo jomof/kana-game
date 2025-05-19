@@ -7,7 +7,7 @@
 import {LitElement, PropertyValues, html, css} from 'lit';
 import {customElement, property, query} from 'lit/decorators.js';
 import * as wanakana from 'wanakana';
-import * as kuromoji from '@patdx/kuromoji'
+import * as kuromoji from '@patdx/kuromoji';
 
 const loader: kuromoji.LoaderConfig = {
   async loadArrayBuffer(url: string): Promise<ArrayBufferLike> {
@@ -22,12 +22,12 @@ const loader: kuromoji.LoaderConfig = {
   },
 };
 
-const tokenizerPromise = new kuromoji.TokenizerBuilder({ loader }).build();
+const tokenizerPromise = new kuromoji.TokenizerBuilder({loader}).build();
 
-export function tokenize(
-  text: string
-): Promise<Token[]> {
-  return tokenizerPromise.then((tokenizer)=>tokenizer.tokenize(text) as Token[]);
+export function tokenize(text: string): Promise<Token[]> {
+  return tokenizerPromise.then(
+    (tokenizer) => tokenizer.tokenize(text) as Token[]
+  );
 }
 
 export interface Question {
@@ -213,7 +213,7 @@ export class KanaGame extends LitElement {
       /* default (light) look */
       border: solid 1px gray;
       padding: 16px;
-      max-width: 800px
+      max-width: 800px;
       background-color: #fff;
       color: #000;
     }
@@ -221,7 +221,6 @@ export class KanaGame extends LitElement {
     :host([state='completed']) span#skeleton {
       color: green;
     }
-
 
     :host([state='normal']) input#kana-input {
       border: solid 1px #ccc;
@@ -327,12 +326,24 @@ export class KanaGame extends LitElement {
       }
 
       @keyframes shake {
-        0%   { transform: translateX(0); }
-        20%  { transform: translateX(-4px); }
-        40%  { transform: translateX(4px); }
-        60%  { transform: translateX(-4px); }
-        80%  { transform: translateX(4px); }
-        100% { transform: translateX(0); }
+        0% {
+          transform: translateX(0);
+        }
+        20% {
+          transform: translateX(-4px);
+        }
+        40% {
+          transform: translateX(4px);
+        }
+        60% {
+          transform: translateX(-4px);
+        }
+        80% {
+          transform: translateX(4px);
+        }
+        100% {
+          transform: translateX(0);
+        }
       }
     }
   `;
@@ -351,7 +362,7 @@ export class KanaGame extends LitElement {
 
   question: Question | null = null;
 
-  answerHiragana : string[] = [];
+  answerHiragana: string[] = [];
 
   /**
    * Called to supply a new question to the game.
@@ -362,8 +373,10 @@ export class KanaGame extends LitElement {
     this.question.parsed = [];
     this.english = this.question.english;
     const tokenizer = await tokenizerPromise;
-    this.question.parsed = this.question.japanese
-      .map((it) => tokenizer.tokenize(it).filter((t)=>t.surface_form !== ' ') as Token[]);
+    this.question.parsed = this.question.japanese.map(
+      (it) =>
+        tokenizer.tokenize(it).filter((t) => t.surface_form !== ' ') as Token[]
+    );
     const group = this.question!.parsed as Token[][];
     const best = selectBestGroup(group);
     this.skeleton = formatTokenGroup(best!, false);
@@ -432,7 +445,9 @@ export class KanaGame extends LitElement {
 
       // unrevealed → underscores
       if (!t.marked && this.state !== 'completed') {
-        return html`<span class="mask">${'_'.repeat(t.surface_form.length)}</span>`;
+        return html`<span class="mask"
+          >${'_'.repeat(t.surface_form.length)}</span
+        >`;
       }
 
       // revealed → ruby with furigana
@@ -485,19 +500,16 @@ export class KanaGame extends LitElement {
   }
 
   private _updateDebugFields() {
-     if (!this.question) return;
+    if (!this.question) return;
 
     // Take each token‐group (one per possible answer),
     // turn every token’s katakana reading into hiragana,
     // join them with spaces, and store in answerHiragana.
     const groups = this.question.parsed as Token[][];
-    this.answerHiragana = groups.map(group =>
-      group
-        .map(token => wanakana.toHiragana(token.reading))
-        .join(' ')
+    this.answerHiragana = groups.map((group) =>
+      group.map((token) => wanakana.toHiragana(token.reading)).join(' ')
     );
   }
-
 }
 
 declare global {

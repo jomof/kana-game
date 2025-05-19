@@ -35,8 +35,6 @@ export default {
     commonjs(),
     copy({
       targets: [
-        {src: 'node_modules/mecab-wasm/lib/*.wasm', dest: 'docs'},
-        {src: 'node_modules/mecab-wasm/lib/*.data', dest: 'docs'},
         {
           src: 'node_modules/lit/polyfill-support.js',
           dest: 'docs/node_modules/lit',

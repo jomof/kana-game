@@ -387,9 +387,7 @@ suite('kana-game', () => {
     const game = model.game;
     await game.supplyQuestion({
       english: 'I am reading a book right now.',
-      japanese: [
-        '今 本 を読んでいる。',
-      ],
+      japanese: ['今 本 を読んでいる。'],
     } as Question);
     await game.updateComplete;
     assert.equal(game.skeleton, '________');

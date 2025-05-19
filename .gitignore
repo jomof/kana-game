@@ -1,8 +1,6 @@
 /node_modules/
 /lib/
 /test/
-/docs/libmecab.wasm
-/docs/libmecab.data
 custom-elements.json
 setup-dev.log
 # top level source
