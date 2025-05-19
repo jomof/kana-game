@@ -54,7 +54,7 @@ suite('kana-game', () => {
           aria-label="Next question"
           class="next-button"
         >
-          ➔
+          Next ➔
         </button>
       </div>
     `;

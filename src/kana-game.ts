@@ -336,8 +336,8 @@ export class KanaGame extends LitElement {
 
   question: Question | null = null;
 
-  private audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-
+  private audioCtx = new (window.AudioContext ||
+    (window as any).webkitAudioContext)();
 
   /**
    * Called to supply a new question to the game.
@@ -364,9 +364,11 @@ export class KanaGame extends LitElement {
 
   protected override updated(changed: PropertyValues) {
     super.updated(changed);
-    this.dispatchEvent(new CustomEvent('properties-changed', {
-      detail: [...changed.keys()]
-    }));
+    this.dispatchEvent(
+      new CustomEvent('properties-changed', {
+        detail: [...changed.keys()],
+      })
+    );
   }
 
   protected override async getUpdateComplete(): Promise<boolean> {
@@ -408,10 +410,10 @@ export class KanaGame extends LitElement {
     const groups = this.question.parsed as Token[][];
     const best = selectBestGroup(groups) || [];
 
-    return html`${best.map(t => {
+    return html`${best.map((t) => {
       // skip unmarked punctuation unless we're in completed state
       if (t.pos_detail1 === '句点' && this.state !== 'completed') {
-        return ''; 
+        return '';
       }
 
       // unrevealed → underscores
@@ -481,18 +483,18 @@ export class KanaGame extends LitElement {
 
     // 1) Oscillator for the tone
     const osc = this.audioCtx.createOscillator();
-    osc.type = 'sawtooth';                         // more harmonics → buzzy
-    osc.frequency.setValueAtTime(100, now);       // start up high
+    osc.type = 'sawtooth'; // more harmonics → buzzy
+    osc.frequency.setValueAtTime(100, now); // start up high
     osc.frequency.exponentialRampToValueAtTime(
-      10,                                         // slide down to low
+      10, // slide down to low
       now + duration
     );
 
     // 2) Envelope for volume
     const gain = this.audioCtx.createGain();
-    gain.gain.setValueAtTime(0.4, now);             // decent loudness
+    gain.gain.setValueAtTime(0.4, now); // decent loudness
     gain.gain.exponentialRampToValueAtTime(
-      0.001,                                       // ramp down cleanly
+      0.001, // ramp down cleanly
       now + duration
     );
 
