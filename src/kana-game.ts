@@ -211,6 +211,7 @@ export class KanaGame extends LitElement {
     }
 
     :host([state='error']) input#kana-input {
+      animation: shake 0.3s ease-in-out;
       outline: none;
       box-shadow: 0 0 0 1px tomato;
     }
@@ -302,6 +303,15 @@ export class KanaGame extends LitElement {
         color: #eee;
         border: solid 1px #555;
       }
+
+      @keyframes shake {
+        0%   { transform: translateX(0); }
+        20%  { transform: translateX(-4px); }
+        40%  { transform: translateX(4px); }
+        60%  { transform: translateX(-4px); }
+        80%  { transform: translateX(4px); }
+        100% { transform: translateX(0); }
+      }
     }
   `;
 
@@ -324,6 +334,9 @@ export class KanaGame extends LitElement {
   state: 'normal' | 'completed' | 'error' = 'normal';
 
   question: Question | null = null;
+
+  private audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
 
   /**
    * Called to supply a new question to the game.
@@ -427,12 +440,42 @@ export class KanaGame extends LitElement {
       showPuncuation = true;
       this.state = 'completed';
     } else if (!anyMarked(marked)) {
+      if (this.state !== 'error') {
+        this.playBuzzer();
+      }
       this.state = 'error';
     } else {
       this.state = 'normal';
     }
 
     this.skeleton = formatTokenGroup(best!, showPuncuation);
+  }
+
+  private playBuzzer() {
+    const now = this.audioCtx.currentTime;
+    const duration = 0.2; // 200 ms buzzer
+
+    // 1) Oscillator for the tone
+    const osc = this.audioCtx.createOscillator();
+    osc.type = 'sawtooth';                         // more harmonics → buzzy
+    osc.frequency.setValueAtTime(100, now);       // start up high
+    osc.frequency.exponentialRampToValueAtTime(
+      10,                                         // slide down to low
+      now + duration
+    );
+
+    // 2) Envelope for volume
+    const gain = this.audioCtx.createGain();
+    gain.gain.setValueAtTime(0.4, now);             // decent loudness
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,                                       // ramp down cleanly
+      now + duration
+    );
+
+    // 3) Hook up and play
+    osc.connect(gain).connect(this.audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + duration);
   }
 }
 
