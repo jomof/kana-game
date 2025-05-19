@@ -7534,10 +7534,10 @@ function selectBestGroup(groups) {
  * @param group  A Token[] to format.
  * @returns      The masked string.
  */
-function formatTokenGroup(group) {
+function formatTokenGroup(group, includePunctuation) {
     return group
         .map((t) => {
-        if (t.marked) {
+        if (t.marked || includePunctuation) {
             return t.word;
         }
         else if (t.pos_detail1 !== '句点') {
@@ -7550,6 +7550,15 @@ function formatTokenGroup(group) {
     })
         .join('');
 }
+/**
+ * Returns true if every non-punctuation token in the array is marked.
+ * Punctuation tokens (where pos_detail1 === "句点") are ignored.
+ *
+ * @param tokens  Array of Token objects to check.
+ */
+function isCompleted(tokens) {
+    return tokens.every((t) => t.pos_detail1 === '句点' || t.marked);
+}
 let KanaGame = class KanaGame extends i {
     constructor() {
         super(...arguments);
@@ -7559,6 +7568,7 @@ let KanaGame = class KanaGame extends i {
         this.mecabInitialized = false;
         this.english = 'I live in Seattle.';
         this.skeleton = '';
+        this.state = 'normal';
         this.question = null;
     }
     /**
@@ -7571,7 +7581,8 @@ let KanaGame = class KanaGame extends i {
         this.question.parsed = this.question.japanese.map(Mecab.query);
         const group = this.question.parsed;
         const best = selectBestGroup(group);
-        this.skeleton = formatTokenGroup(best);
+        this.skeleton = formatTokenGroup(best, false);
+        this.state = 'normal';
     }
     firstUpdated() {
         if (this.kana) {
@@ -7606,17 +7617,30 @@ let KanaGame = class KanaGame extends i {
     }
     handleKeydown(e) {
         if (e.key === 'Enter') {
-            if (this.question === null)
+            if (this.question === null) {
                 return;
+            }
             const value = e.target.value;
             const group = this.question.parsed;
             const katakana = toKatakana(value);
             const marked = markTokens(group, katakana);
             const best = selectBestGroup(group);
-            this.skeleton = formatTokenGroup(best);
             if (anyMarked(marked)) {
                 this.kana.value = '';
             }
+            let showPuncuation = false;
+            if (isCompleted(best)) {
+                showPuncuation = true;
+                this.kana.blur();
+                this.state = 'completed';
+            }
+            else if (!anyMarked(marked)) {
+                this.state = 'error';
+            }
+            else {
+                this.state = 'normal';
+            }
+            this.skeleton = formatTokenGroup(best, showPuncuation);
         }
     }
 };
@@ -7630,70 +7654,78 @@ KanaGame.styles = i$3 `
       color-scheme: light dark;
 
       /* default (light) look */
-      border: var(--kana-game-border, solid 1px gray);
-      padding: var(--kana-game-padding, 16px);
-      max-width: var(--kana-game-max-width, 800px);
-      background-color: var(--kana-game-background-color, #fff);
-      color: var(--kana-game-text-color, #000);
+      border: solid 1px gray;
+      padding: 16px;
+      max-width: 800px;
+      background-color: #fff;
+      color: #000;
+    }
+
+    :host([state='completed']) span#skeleton {
+      color: green;
+    }
+
+    :host([state='normal']) input#kana-input {
+      border: solid 1px #ccc;
+    }
+
+    :host([state='completed']) input#kana-input {
+      border: 2px solid green;
+      outline: none;
+      box-shadow: 0 0 0 2px green;
+    }
+
+    :host([state='error']) input#kana-input {
+      border: 2px solid tomato;
+      outline: none;
+      box-shadow: 0 0 0 2px tomato;
     }
 
     span#english {
-      font-family: var(
-        --kana-game-english-font-family,
-        'Noto Sans JP',
-        sans-serif
-      );
-      font-size: var(--kana-game-english-font-size, 22px);
-      text-align: var(--kana-game-english-text-align, center);
-      width: var(--kana-game-english-width, 100%);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 22px;
+      text-align: center;
+      width: 100%;
     }
 
     span#skeleton {
-      font-family: var(
-        --kana-game-skeleton-font-family,
-        'Noto Sans JP',
-        sans-serif
-      );
-      font-size: var(--kana-game-skeleton-font-size, 22px);
-      text-align: var(--kana-game-skeleton-text-align, center);
-      width: var(--kana-game-skeleton-width, 100%);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 22px;
+      text-align: center;
+      width: 100%;
     }
 
     input#kana-input {
-      font-family: var(
-        --kana-game-input-font-family,
-        'Noto Sans JP',
-        sans-serif
-      );
-      font-size: var(--kana-game-input-font-size, 22px);
-      line-height: var(--kana-game-input-line-height, 33px);
-      text-align: var(--kana-game-input-text-align, center);
-      width: var(--kana-game-input-width, 100%);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 22px;
+      line-height: 33px;
+      text-align: center;
+      width: 100%;
 
       /* light-mode input styling */
-      background-color: var(--kana-game-input-bg, #fff);
-      color: var(--kana-game-input-color, #000);
-      border: var(--kana-game-input-border, solid 1px #ccc);
+      background-color: #fff;
+      color: #000;
+      border-radius: 8px;
     }
 
     @media (prefers-color-scheme: dark) {
       :host {
         /* dark-mode host overrides */
-        background-color: var(--kana-game-background-color-dark, #121212);
-        color: var(--kana-game-text-color-dark, #eee);
-        border: var(--kana-game-border-dark, solid 1px #444);
+        background-color: #121212;
+        color: #eee;
+        border: solid 1px #444;
       }
 
       span#english {
         /* if you want a different heading color in dark */
-        color: var(--kana-game-english-color-dark, #eee);
+        color: #eee;
       }
 
       input#kana-input {
         /* dark-mode input overrides */
-        background-color: var(--kana-game-input-bg-dark, #222);
-        color: var(--kana-game-input-color-dark, #eee);
-        border: var(--kana-game-input-border-dark, solid 1px #555);
+        background-color: #222;
+        color: #eee;
+        border: solid 1px #555;
       }
     }
   `;
@@ -7709,6 +7741,9 @@ __decorate([
 __decorate([
     e('#kana-input')
 ], KanaGame.prototype, "kana", void 0);
+__decorate([
+    n({ type: String, reflect: true })
+], KanaGame.prototype, "state", void 0);
 KanaGame = __decorate([
     t('kana-game')
 ], KanaGame);
