@@ -7609,6 +7609,7 @@ let KanaGame = class KanaGame extends i {
           type="text"
           .readOnly=${this.state === 'completed'}
           @keydown=${this.handleKeydown}
+          @input=${this.handleInput}
           placeholder="答え"
         />
         <button
@@ -7627,6 +7628,12 @@ let KanaGame = class KanaGame extends i {
     _onMecabReady() {
         this.mecabInitialized = true;
         this.dispatchEvent(new CustomEvent('mecab-ready'));
+    }
+    handleInput(_) {
+        // as soon as the user types or pastes anything, clear the error
+        if (this.state === 'error') {
+            this.state = 'normal';
+        }
     }
     handleKeydown(e) {
         if (this.question === null)
@@ -7697,11 +7704,11 @@ KanaGame.styles = i$3 `
       box-shadow: 0 0 0 2px tomato;
     }
 
-    :host([state="completed"]) .next-button {
-      display: block;            /* show when completed */
+    :host([state='completed']) .next-button {
+      display: block; /* show when completed */
     }
 
-    :host([state="completed"]) .next-button:hover {
+    :host([state='completed']) .next-button:hover {
       color: #000;
     }
 
@@ -7721,7 +7728,7 @@ KanaGame.styles = i$3 `
       line-height: 1;
       cursor: pointer;
       color: #444;
-      display: none;             /* hidden by default */
+      display: none; /* hidden by default */
     }
 
     span#english {
@@ -7742,7 +7749,7 @@ KanaGame.styles = i$3 `
       box-sizing: border-box;
       width: 100%;
       padding-left: 2.5em;
-      padding-right: 2.5em;      /* make room for the arrow */
+      padding-right: 2.5em; /* make room for the arrow */
       border-radius: 8px;
 
       font-family: 'Noto Sans JP', sans-serif;
@@ -7765,7 +7772,7 @@ KanaGame.styles = i$3 `
         border: solid 1px #444;
       }
 
-      :host([state="completed"]) .next-button:hover {
+      :host([state='completed']) .next-button:hover {
         color: #eee;
       }
 
