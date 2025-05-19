@@ -49,16 +49,16 @@ export default {
      * This minification setup serves the static site generation.
      * For bundling and minification, check the README.md file.
      */
-    // terser({
-    //   ecma: 2021,
-    //   module: true,
-    //   warnings: true,
-    //   mangle: {
-    //     properties: {
-    //       regex: /^__/,
-    //     },
-    //   },
-    // }),
+    terser({
+      ecma: 2021,
+      module: true,
+      warnings: true,
+      mangle: {
+        properties: {
+          regex: /^__/,
+        },
+      },
+    }),
     analyze({summaryOnly: true}),
     summary(),
   ],
