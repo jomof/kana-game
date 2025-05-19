@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {KanaGame, Token, markTokens} from '../kana-game.js';
+import {KanaGame, Token, markTokens, Question} from '../kana-game.js';
 import Mecab from 'mecab-wasm';
 import {fixture, assert} from '@open-wc/testing';
 import {html} from 'lit/static-html.js';
@@ -52,6 +52,48 @@ suite('kana-game', () => {
     `;
   }
 
+  interface Model {
+    game: KanaGame;
+    shadowRoot: ShadowRoot;
+    input: HTMLInputElement;
+  }
+
+  async function getModel(): Promise<Model> {
+    const game = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
+    const shadowRoot = game.shadowRoot;
+    assert.ok(shadowRoot, 'Shadow root should be present');
+    const input = shadowRoot.querySelector('#kana-input') as HTMLInputElement;
+    assert.ok(input, 'Input element should be present');
+    return {
+      game: game,
+      shadowRoot: shadowRoot,
+      input: input,
+    };
+  }
+
+  async function sendInput(model: Model, text: string, enter = true) {
+    const input = model.input;
+    // Set the input value to a romaji string
+    input.value = text;
+
+    // Dispatch an input event to trigger WanaKana binding
+    input.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
+
+    // Perform a keydown event to simulate pressing the Enter key
+    if (enter) {
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Enter',
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
+
+    // Wait for any asynchronous updates
+    await model.game.updateComplete;
+  }
+
   test('is defined', () => {
     const el = document.createElement('kana-game');
     assert.instanceOf(el, KanaGame);
@@ -88,8 +130,8 @@ suite('kana-game', () => {
   });
 
   test('check supplyQuestion', async () => {
-    const game = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
-    await game.updateComplete;
+    const model = await getModel();
+    const game = model.game;
     game.supplyQuestion({
       english: 'I am a teacher.',
       japanese: ['先生です。', '先生だ。'],
@@ -100,24 +142,10 @@ suite('kana-game', () => {
   });
 
   test('converts romaji input to kana using WanaKana', async () => {
-    const el = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
-    const shadowRoot = el.shadowRoot;
-    assert.ok(shadowRoot, 'Shadow root should be present');
-
-    const input = shadowRoot.querySelector('#kana-input') as HTMLInputElement;
-    assert.ok(input, 'Input element should be present');
-
-    // Set the input value to a romaji string
-    input.value = 'konichiha';
-
-    // Dispatch an input event to trigger WanaKana binding
-    input.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
-
-    // Wait for any asynchronous updates
-    await el.updateComplete;
-
+    const model = await getModel();
+    await sendInput(model, 'konnnichiha');
     // Assert that the input value has been converted to kana
-    assert.equal(input.value, 'こにちは');
+    assert.equal(model.input.value, 'こんにちは');
   });
 
   test('mark tokens 1', async () => {
@@ -304,5 +332,23 @@ suite('kana-game', () => {
       tokens.map((t) => t.marked),
       before
     );
+  });
+
+  test('run to correct completion', async () => {
+    const model = await getModel();
+    const game = model.game;
+    game.supplyQuestion({
+      english: 'I am a student.',
+      japanese: ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
+    } as Question);
+    await game.updateComplete;
+    assert.equal(game.english, 'I am a student.');
+    assert.isNotNull(game.question);
+    await sendInput(model, 'da');
+    assert.equal(game.state, 'normal');
+    assert.equal(game.skeleton, '__だ');
+    await sendInput(model, 'gakusei');
+    assert.equal(game.state, 'completed');
+    assert.equal(game.skeleton, '学生だ。');
   });
 });
