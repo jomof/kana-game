@@ -102,6 +102,18 @@ suite('kana-game', () => {
     await model.game.updateComplete;
   }
 
+   async function sendBackspace(model: Model) {
+    const input = model.input;
+    // Set the input value to a romaji string
+    input.value = input.value.slice(0, -1);
+
+    // Dispatch an input event to trigger WanaKana binding
+    input.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
+
+    // Wait for any asynchronous updates
+    await model.game.updateComplete;
+  }
+
   test('is defined', () => {
     const el = document.createElement('kana-game');
     assert.instanceOf(el, KanaGame);
@@ -358,5 +370,22 @@ suite('kana-game', () => {
     await sendInput(model, 'gakusei');
     assert.equal(game.state, 'completed');
     assert.equal(game.skeleton, '学生だ。');
+  });
+
+  test('run to error then return to normal', async () => {
+    const model = await getModel();
+    const game = model.game;
+    game.supplyQuestion({
+      english: 'I am a student.',
+      japanese: ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
+    } as Question);
+    await game.updateComplete;
+    assert.equal(game.skeleton, '____');
+    await sendInput(model, 'ni'); // incorrect input
+    assert.equal(game.state, 'error');
+    assert.equal(game.skeleton, '____');
+    await sendBackspace(model); // Backspace returns to normal
+    assert.equal(game.state, 'normal');
+    assert.equal(game.skeleton, '____');
   });
 });

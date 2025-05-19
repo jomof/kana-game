@@ -214,11 +214,11 @@ export class KanaGame extends LitElement {
       box-shadow: 0 0 0 2px tomato;
     }
 
-    :host([state="completed"]) .next-button {
-      display: block;            /* show when completed */
+    :host([state='completed']) .next-button {
+      display: block; /* show when completed */
     }
 
-    :host([state="completed"]) .next-button:hover {
+    :host([state='completed']) .next-button:hover {
       color: #000;
     }
 
@@ -238,7 +238,7 @@ export class KanaGame extends LitElement {
       line-height: 1;
       cursor: pointer;
       color: #444;
-      display: none;             /* hidden by default */
+      display: none; /* hidden by default */
     }
 
     span#english {
@@ -259,7 +259,7 @@ export class KanaGame extends LitElement {
       box-sizing: border-box;
       width: 100%;
       padding-left: 2.5em;
-      padding-right: 2.5em;      /* make room for the arrow */
+      padding-right: 2.5em; /* make room for the arrow */
       border-radius: 8px;
 
       font-family: 'Noto Sans JP', sans-serif;
@@ -282,7 +282,7 @@ export class KanaGame extends LitElement {
         border: solid 1px #444;
       }
 
-      :host([state="completed"]) .next-button:hover {
+      :host([state='completed']) .next-button:hover {
         color: #eee;
       }
 
@@ -365,6 +365,7 @@ export class KanaGame extends LitElement {
           type="text"
           .readOnly=${this.state === 'completed'}
           @keydown=${this.handleKeydown}
+          @input=${this.handleInput}
           placeholder="答え"
         />
         <button
@@ -385,6 +386,13 @@ export class KanaGame extends LitElement {
   private _onMecabReady() {
     this.mecabInitialized = true;
     this.dispatchEvent(new CustomEvent('mecab-ready'));
+  }
+
+  private handleInput(_: InputEvent) {
+    // as soon as the user types or pastes anything, clear the error
+    if (this.state === 'error') {
+      this.state = 'normal';
+    }
   }
 
   private handleKeydown(e: KeyboardEvent) {
