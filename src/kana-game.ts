@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {LitElement, html, css} from 'lit';
+import {LitElement, PropertyValues, html, css} from 'lit';
 import {customElement, property, query} from 'lit/decorators.js';
 import * as wanakana from 'wanakana';
 import Mecab, {MecabToken} from 'mecab-wasm';
@@ -206,15 +206,13 @@ export class KanaGame extends LitElement {
     }
 
     :host([state='completed']) input#kana-input {
-      border: 2px solid green;
       outline: none;
-      box-shadow: 0 0 0 2px green;
+      box-shadow: 0 0 0 1px green;
     }
 
     :host([state='error']) input#kana-input {
-      border: 2px solid tomato;
       outline: none;
-      box-shadow: 0 0 0 2px tomato;
+      box-shadow: 0 0 0 1px tomato;
     }
 
     :host([state='completed']) .next-button {
@@ -340,6 +338,7 @@ export class KanaGame extends LitElement {
     const best = selectBestGroup(group);
     this.skeleton = formatTokenGroup(best!, false);
     this.state = 'normal';
+    this.kana.focus();
   }
 
   override firstUpdated() {
@@ -347,6 +346,13 @@ export class KanaGame extends LitElement {
       wanakana.bind(this.kana, {IMEMode: true});
       this.kana.focus();
     }
+  }
+
+  protected override updated(changed: PropertyValues) {
+    super.updated(changed);
+    this.dispatchEvent(new CustomEvent('properties-changed', {
+      detail: [...changed.keys()]
+    }));
   }
 
   protected override async getUpdateComplete(): Promise<boolean> {
@@ -377,7 +383,7 @@ export class KanaGame extends LitElement {
           @click=${this._onNextClick}
           aria-label="Next question"
         >
-          ➔
+          Next ➔
         </button>
       </div>
     `;

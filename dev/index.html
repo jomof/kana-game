@@ -45,6 +45,9 @@
       <kana-game></kana-game>
     </div>
 
+    <!-- add a debug panel -->
+    <pre id="debug"></pre>
+
     <script type="module">
       let questions = [
         {
@@ -70,9 +73,12 @@
       ];
       window.addEventListener('DOMContentLoaded', async () => {
         const game = document.querySelector('kana-game');
+        const debug = document.getElementById('debug');
+        game.addEventListener('properties-changed', () => debug.textContent = `state: ${game.state}\nskeleton: ${game.skeleton}`);
         await game.updateComplete;
         let current = 0;
         game.supplyQuestion(questions[current]);
+        
         game.addEventListener('next-question', () => {
           // advance index (wrap if you like)
           current = (current + 1) % questions.length;
