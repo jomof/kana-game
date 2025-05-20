@@ -95,14 +95,6 @@ const augmentDesuDaTokens = makeTokenAugmenter(
   }
 );
 
-const augmentQuestionKanaTokens = makeTokenAugmenter(
-  (tokens) => {
-    const raw = tokens.map((t) => t.surface_form).join('');
-    return /でしょうか？$/.test(raw);
-  },
-  (raw) => [raw.replace(/でしょうか？$/, 'かな？')]
-);
-
 const augmentDropWatashiHa = makeTokenAugmenter(
   // Guard: first two tokens are 私 + は, and there’s at least one more token
   (tokens) =>
@@ -125,7 +117,6 @@ const tokenAugmenters: TokenAugmenter[] = [
   augmentAnataTokens,
   augmentAtashiTokens,
   augmentDesuDaTokens,
-  augmentQuestionKanaTokens,
   augmentDropWatashiHa,
 ];
 
