@@ -395,4 +395,17 @@ suite('kana-game', () => {
     assert.equal(game.skeleton, '今本を読んでいる。');
     assert.equal(game.state, 'completed');
   });
+
+  test('watashi drop', async () => {
+    const model = await getModel();
+    const game = model.game;
+    await game.supplyQuestion({
+      english: 'I want to go to Japan.',
+      japanese: ['私は日本に行きたいんです。'],
+    } as Question);
+    await game.updateComplete;
+    await sendInput(model, 'nipponnniikitainda');
+    assert.equal(game.skeleton, '日本に行きたいんだ。');
+    assert.equal(game.state, 'completed');
+  });
 });
