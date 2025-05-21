@@ -49,17 +49,11 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
 
-  release:
-    needs: build-test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    if: github.event_name == 'release' && github.event.action == 'published'
-    steps:      
-      - name: Build the package
-        run: npm pack
+      - name: Build the Package
+        run: npm pack && npm pack --json
 
       - name: Upload release assets
+        if: github.event_name == 'release' && github.event.action == 'published'
         uses: softprops/action-gh-release@v1
         with:
           files: |
