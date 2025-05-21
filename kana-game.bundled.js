@@ -158,6 +158,27 @@ const ot={attribute:!0,type:String,converter:g,reflect:!1,hasChanged:b},ct=(t=ot
       border-radius: 8px;
     }
 
+          @keyframes shake {
+        0% {
+          transform: translateX(0);
+        }
+        20% {
+          transform: translateX(-4px);
+        }
+        40% {
+          transform: translateX(4px);
+        }
+        60% {
+          transform: translateX(-4px);
+        }
+        80% {
+          transform: translateX(4px);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+
     @media (prefers-color-scheme: dark) {
       :host {
         /* dark-mode host overrides */
@@ -179,31 +200,9 @@ const ot={attribute:!0,type:String,converter:g,reflect:!1,hasChanged:b},ct=(t=ot
       }
 
       input#kana-input {
-        /* dark-mode input overrides */
         background-color: #222;
         color: #eee;
         border: solid 1px #555;
-      }
-
-      @keyframes shake {
-        0% {
-          transform: translateX(0);
-        }
-        20% {
-          transform: translateX(-4px);
-        }
-        40% {
-          transform: translateX(4px);
-        }
-        60% {
-          transform: translateX(-4px);
-        }
-        80% {
-          transform: translateX(4px);
-        }
-        100% {
-          transform: translateX(0);
-        }
       }
     }
   `,ue([ut({type:String})],Oe.prototype,"english",void 0),ue([ut({type:String})],Oe.prototype,"skeleton",void 0),ue([
