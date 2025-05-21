@@ -49,75 +49,69 @@
     <pre id="debug"></pre>
 
     <script type="module">
+      // Japanese annotations on 'english' words are base form if verbs.
       let questions = [
         {
           id: 0,
           english: 'I live[住んでる] in Seattle[シアトル].',
-          japanese: ['シアトルに住んでいます。', 'シアトルに住んでる。'],
+          japanese: [
+            '私 は シアトル に 住んでいます。',
+            '私 は シアトル に 住んでる。'
+          ],
         },
         {
           id: 1,
-          english: 'I am a student.',
+          english: 'I am a student[学生].',
           japanese: [
-            '私は学生です。',
-            '私は学生だ。',
-            '学生です。',
-            '学生だ。',
+            '私 は 学生 です。',
           ],
         },
         {
           id: 2,
-          english: 'I am a teacher.',
-          japanese: ['先生です。', '先生だ。'],
+          english: 'I am a teacher[先生].',
+          japanese: [
+            '私 は 先生 です。'
+          ],
         },
         {
           id: 3,
-          english: 'I eat sushi every day.',
+          english: 'I eat[食べる] sushi[寿司] every[毎] day[日].',
           japanese: [
-            '私は毎日寿司を食べます。',
-            '毎日寿司を食べます。',
-            '私は毎日寿司を食べる。',
-            '毎日寿司を食べる。',
+            '私 は 毎 日 寿司 を 食べます。',
+            '私 は 毎 日 寿司 を 食べる。',
           ],
         },
         {
           id: 4,
-          english: 'I can speak Japanese.',
+          english: 'I can speak[話せる] Japanese[日本語].',
           japanese: [
-            '私は日本語を話すことができます。',
-            '日本語を話すことができる。',
-            '日本語が話せます。',
-            '日本語が話せる。',
+            '私 は 日本語 を 話すこと が できます。',
+            '私 は 日本語 を 話すこと が できる。',
+            '私 は 日本語 が 話せます。',
+            '私 は 日本語 が 話せる。',
           ],
         },
         {
           id: 5,
-          english: 'I went to Tokyo last year.',
+          english: 'I went[行く] to Tokyo[東京] last year[去年].',
           japanese: [
-            '私は去年東京に行きました。',
-            '去年東京に行きました。',
-            '私は去年東京に行った。',
-            '去年東京に行った。',
+            '私 は 去年 東京 に 行きました。',
+            '私 は 去年 東京 に 行った。',
           ],
         },
         {
           id: 6,
-          english: 'I am reading a book right now.',
+          english: 'I am reading[読んでる] a book[本] right now[今].',
           japanese: [
             '私 は 今 本 を 読んでいます。',
             '私 は 今 本 を 読んでいる。',
-            '本 を 読んでいます。',
-            '本 を 読んでる。',
           ],
         },
         {
           id: 7,
-          english: 'I want to go to Japan.',
+          english: 'I want to go[行く] to Japan[日本].',
           japanese: [
-            // '私は日本に行きたいです。',
-            // '私は日本に行きたいです。',
-            // '私は日本に行きたい。',
-            '私は日本に行きたいんだ。',
+            '私 は 日本 に 行きたい です。',
           ],
         },
       ];

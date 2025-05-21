@@ -423,6 +423,27 @@ export class KanaGame extends LitElement {
       border-radius: 8px;
     }
 
+          @keyframes shake {
+        0% {
+          transform: translateX(0);
+        }
+        20% {
+          transform: translateX(-4px);
+        }
+        40% {
+          transform: translateX(4px);
+        }
+        60% {
+          transform: translateX(-4px);
+        }
+        80% {
+          transform: translateX(4px);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+
     @media (prefers-color-scheme: dark) {
       :host {
         /* dark-mode host overrides */
@@ -444,31 +465,9 @@ export class KanaGame extends LitElement {
       }
 
       input#kana-input {
-        /* dark-mode input overrides */
         background-color: #222;
         color: #eee;
         border: solid 1px #555;
-      }
-
-      @keyframes shake {
-        0% {
-          transform: translateX(0);
-        }
-        20% {
-          transform: translateX(-4px);
-        }
-        40% {
-          transform: translateX(4px);
-        }
-        60% {
-          transform: translateX(-4px);
-        }
-        80% {
-          transform: translateX(4px);
-        }
-        100% {
-          transform: translateX(0);
-        }
       }
     }
   `;
@@ -487,6 +486,7 @@ export class KanaGame extends LitElement {
 
   question: Question | null = null;
 
+  // For debugging: the hiragana readings of all possible answers.
   answerHiragana: string[] = [];
 
   /**
@@ -616,9 +616,9 @@ export class KanaGame extends LitElement {
     if (anyMarked(marked)) {
       this.kana.value = '';
     }
-    let showPuncuation = false;
+    let showPunctuation = false;
     if (isCompleted(best!)) {
-      showPuncuation = true;
+      showPunctuation = true;
       this.state = 'completed';
     } else if (!anyMarked(marked)) {
       this.state = 'error';
@@ -626,7 +626,7 @@ export class KanaGame extends LitElement {
       this.state = 'normal';
     }
 
-    this.skeleton = formatTokenGroup(best!, showPuncuation);
+    this.skeleton = formatTokenGroup(best!, showPunctuation);
   }
 
   private _updateDebugFields() {
