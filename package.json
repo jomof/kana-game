@@ -6,12 +6,20 @@
   "main": "kana-game.js",
   "module": "kana-game.js",
   "type": "module",
-  "files:": [
+  "files": [
     "kana-game.js",
-    "kana-game.ts.map"
+    "kana-game.js.map"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jomof/kana-game.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jomof/kana-game/issues"
+  },
+  "homepage": "https://jomof.github.io/kana-game/",
   "scripts": {
-    "prepack": "cp package.json package.json.packbak && npm pkg delete scripts devDependencies",
+    "prepack": "cp package.json package.json.packbak && npm pkg delete scripts devDependencies customElements",
     "postpack": "mv package.json.packbak package.json",
     "build": "tsc",
     "build:watch": "tsc --watch",
