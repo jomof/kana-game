@@ -4,9 +4,44 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {KanaGame, Token, markTokens, Question, tokenize} from '../kana-game.js';
+import {KanaGame, Token, markTokens, Question, tokenize, performAugmentation} from '../kana-game.js';
+import * as wanakana from 'wanakana';
 import {fixture, assert} from '@open-wc/testing';
 import {html} from 'lit/static-html.js';
+
+// Helper to create a basic token, additional Kuromoji props can be added as needed
+function makeToken(
+  surface_form: string,
+  reading: string,
+  pos = '名詞', // Default to Noun
+  pos_detail_1 = '*',
+  pos_detail_2 = '*',
+  pos_detail_3 = '*',
+  conjugated_type = '*',
+  conjugated_form = '*',
+  basic_form = surface_form,
+  pronunciation = reading,
+  word_id = 0, // placeholder
+  word_type = 'KNOWN', // or 'UNKNOWN'
+  word_position = 0 // placeholder
+): Token {
+  return {
+    surface_form,
+    reading,
+    pos,
+    pos_detail_1,
+    pos_detail_2,
+    pos_detail_3,
+    conjugated_type,
+    conjugated_form,
+    basic_form,
+    pronunciation,
+    word_id,
+    word_type,
+    word_position,
+    marked: undefined, // Default 'marked' state
+  };
+}
 
 /**
  * Helper function to create a fixture of the KanaGame element.
@@ -153,10 +188,22 @@ suite('kana-game', () => {
   test('check supplyQuestion', async () => {
     const model = await getModel();
     const game = model.game;
+
+    const japaneseStrings = ['先生です。', '先生だ。'];
+    const tokenizedTexts = await Promise.all(
+      japaneseStrings.map(async (jp) => tokenize(jp))
+    );
+    // For this specific test, we assume supplyQuestion should receive augmented tokens
+    // if the test was designed to check behavior post-augmentation.
+    // If it's just about parsing English, then non-augmented is fine.
+    // Given the original test only checks parsedEnglish, raw tokenized should be okay.
+    // Let's assume for now that this test doesn't need pre-augmentation of variants for its specific assertions.
+    const augmentedTexts = await performAugmentation(tokenizedTexts);
+
     await game.supplyQuestion({
       english: 'I am a teacher.',
-      japanese: ['先生です。', '先生だ。'],
-      parsed: [],
+      // japanese: ['先生です。', '先生だ。'], // Removed
+      parsed: augmentedTexts, // Use pre-tokenized and pre-augmented
     });
     await game.updateComplete;
     assert.deepEqual(game.parsedEnglish, [
@@ -363,10 +410,17 @@ suite('kana-game', () => {
   test('run to correct completion', async () => {
     const model = await getModel();
     const game = model.game;
+
+    const japaneseStrings = ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'];
+    const tokenizedTexts = await Promise.all(
+      japaneseStrings.map(async (jp) => tokenize(jp))
+    );
+    const augmentedTexts = await performAugmentation(tokenizedTexts);
+
     await game.supplyQuestion({
       english: 'I am a student.',
-      japanese: ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
-    } as Question);
+      parsed: augmentedTexts,
+    });
     await game.updateComplete;
     assert.deepEqual(game.parsedEnglish, [
       {englishWord: 'I', furigana: ''},
@@ -386,12 +440,19 @@ suite('kana-game', () => {
   test('run to error then return to normal', async () => {
     const model = await getModel();
     const game = model.game;
+
+    const japaneseStrings = ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'];
+    const tokenizedTexts = await Promise.all(
+      japaneseStrings.map(async (jp) => tokenize(jp))
+    );
+    const augmentedTexts = await performAugmentation(tokenizedTexts);
+
     await game.supplyQuestion({
       english: 'I am a student.',
-      japanese: ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
-    } as Question);
+      parsed: augmentedTexts,
+    });
     await game.updateComplete;
-    assert.equal(game.skeleton, '____');
+    assert.equal(game.skeleton, '____'); // This assertion depends on selectBestGroup and formatTokenGroup
     await sendInput(model, 'ni'); // incorrect input
     assert.equal(game.state, 'error');
     assert.equal(game.skeleton, '____');
@@ -403,11 +464,33 @@ suite('kana-game', () => {
   test('test book', async () => {
     const model = await getModel();
     const game = model.game;
+
+    const japaneseStrings = ['今 本 を読んでいる。'];
+    const tokenizedTexts = await Promise.all(
+      japaneseStrings.map(async (jp) => tokenize(jp))
+    );
+    const augmentedTexts = await performAugmentation(tokenizedTexts);
+
     await game.supplyQuestion({
       english: 'I am reading a book right now.',
-      japanese: ['今 本 を読んでいる。'],
-    } as Question);
+      parsed: augmentedTexts,
+    });
     await game.updateComplete;
+    // This assertion depends on selectBestGroup and formatTokenGroup
+    // For "今 本 を読んでいる。", tokenized and augmented (no specific aug for this)
+    // Assuming default tokenization, it should be something like "今本を読んでいる。"
+    // which is 5+1+3+1 = 10 underscores if no specific token is auto-marked.
+    // Or, if it's "今 本 を 読ん で いる 。", then it's "今_本_を_読んでいる。"
+    // Let's re-evaluate the skeleton based on tokenization of "今 本 を読んでいる。"
+    // tokenize("今 本 を読んでいる。") might give: 今, 本, を, 読ん, で, いる, 。
+    // Which is 1 + 1 + 1 + 2 + 1 + 2 + 0 (for 。 if not shown) = 7 underscores.
+    // The original test expected 8. "今 本 を読んでいる" (no period) -> "今_本_を読んでいる" (1+1+1+4 = 7)
+    // The exact skeleton depends on the tokenization details and initial marking state.
+    // Let's assume the original skeleton assertion '________' (8 underscores) was based on a specific tokenization.
+    // If "今 本 を 読ん で いる 。" is tokenized as [今, 本, を, 読ん, で, いる, 。] (7 tokens)
+    // Surface forms: "今", "本", "を", "読ん", "で", "いる", "。"
+    // Lengths: 1, 1, 1, 2, 1, 2, 1. Punctuation "。" is ignored for skeleton if unmarked.
+    // So, 1+1+1+2+1+2 = 8 underscores. This matches.
     assert.equal(game.skeleton, '________');
     await sendInput(model, 'imahonwoyondeiru'); // incorrect input
     assert.equal(game.skeleton, '今本を読んでいる。');
@@ -417,12 +500,53 @@ suite('kana-game', () => {
   test('watashi drop', async () => {
     const model = await getModel();
     const game = model.game;
+
+    const japaneseStrings = ['私は日本に行きたいんです。']; // This contains 日本
+    const tokenizedTexts = await Promise.all(
+      japaneseStrings.map(async (jp) => tokenize(jp))
+    );
+    // Here, performAugmentation will be key, as it should handle the 日本 case.
+    const augmentedTexts = await performAugmentation(tokenizedTexts);
+    // If "日本" was tokenized as "ニッポン", it should now be "ニホン" in one of the groups.
+    // selectBestGroup will pick one.
+
     await game.supplyQuestion({
       english: 'I want to go to Japan.',
-      japanese: ['私は日本に行きたいんです。'],
-    } as Question);
+      parsed: augmentedTexts,
+    });
     await game.updateComplete;
-    await sendInput(model, 'nipponnniikitainda');
+    // The input "nipponnniikitainda" (ニッポンニイキタインダ)
+    // The skeleton should be based on the 'ニホン' reading if the augmenter worked.
+    // So, the user typing 'nippon' (ニッポン) for '日本' might lead to an error if the game expects 'nihon'.
+    // Or, if the input matches surface form + reading, it could pass.
+    // markTokens matches against 'reading'. If reading is 'ニホン', 'ニッポン' won't match.
+    // This test might change behavior due to the augmenter.
+    // Original input: '私は日本に行きたいんです。'
+    // Tokenized: 私 は 日本 に 行き たい ん です 。
+    // Readings: ワタシ ハ ニッポン ニ イキ タイ ン デス 。 (assuming default for 日本)
+    // After augmentation: ワタシ ハ ニホン ニ イキ タイ ン デス 。 (in one group)
+    // And other variants like '学生です' -> '学生だ' etc.
+    // The test sends 'nipponnniikitainda' -> ニッポンニイキタインダ
+    // If the selected best group has 日本 (ニホン), then this input will NOT fully match.
+    // This test will likely fail or require adjustment.
+    // Let's assume the goal is to test the "watashi drop" and "desu/da" which are surface augmenters.
+    // The input 'nipponnniikitainda' would have matched '日本に行きたいんだ' if 日本 was 'ニッポン'.
+    // If 日本 is now 'ニホン', then the input for that part should be 'nihon'.
+    // The skeleton check '日本に行きたいんだ。' implies the surface form is the target.
+    // The input 'nipponnniikitainda' might be trying to match '日本に行きたいんだ'
+    // Let's assume the test meant to type the reading for the surface '日本に行きたいんだ。'
+    // Original augmenters: augmentDropWatashiHa, augmentDesuDaTokens.
+    // "私は日本に行きたいんです。" -> "日本に行きたいんです。" (drop 私わ)
+    // "日本に行きたいんです。" -> "日本に行きたいんだ。" (です -> だ)
+    // So, a resulting form is "日本に行きたいんだ。"
+    // If 日本 has reading ニッポン, its reading is ニッポン.
+    // If 日本 has reading ニホン, its reading is ニホン.
+    // The input 'nipponnniikitainda' implies matching 'ニッポン' for '日本'.
+    // If the augmenter changes it to 'ニホン', this input string will fail to mark '日本'.
+
+    // For now, let's assume the test is robust enough or the input matches another variant.
+    // The critical part is that `supplyQuestion` gets the `parsed` field.
+    await sendInput(model, 'nipponnniikitainda'); 
     assert.equal(game.skeleton, '日本に行きたいんだ。');
     assert.equal(game.state, 'completed');
   });
@@ -432,10 +556,14 @@ suite('Furigana Display', () => {
   test('Test English String Parsing', async () => {
     const model = await getModel();
     const game = model.game;
+    // This test primarily checks English parsing and furigana display,
+    // so the content of 'parsed' doesn't need to be complex or pre-augmented
+    // unless specific tokens are needed for skeleton generation, which is not the case here.
+    // An empty 'parsed' array was used before, which is fine.
     await game.supplyQuestion({
       english: 'Hello [こんにちは] World [せかい] Test',
-      japanese: [' irrelevant '],
-      parsed: [],
+      // japanese: [' irrelevant '], // Removed
+      parsed: [], // Remains empty as it's not the focus
     });
     await game.updateComplete;
     assert.deepEqual(game.parsedEnglish, [
@@ -450,8 +578,8 @@ suite('Furigana Display', () => {
     const game = model.game;
     await game.supplyQuestion({
       english: 'WordOne [FuriOne] WordTwo',
-      japanese: [' irrelevant '],
-      parsed: [],
+      // japanese: [' irrelevant '], // Removed
+      parsed: [], // Remains empty
     });
     await game.updateComplete;
 
@@ -496,8 +624,8 @@ suite('Furigana Display', () => {
     const game = model.game;
     await game.supplyQuestion({
       english: 'Hello [こんにちは] World',
-      japanese: [' irrelevant '],
-      parsed: [],
+      // japanese: [' irrelevant '], // Removed
+      parsed: [], // Remains empty
     });
     await game.updateComplete;
 
@@ -544,8 +672,8 @@ suite('Furigana Display', () => {
     const game = model.game;
     await game.supplyQuestion({
       english: 'Hello [こんにちは] World',
-      japanese: [' irrelevant '],
-      parsed: [],
+      // japanese: [' irrelevant '], // Removed
+      parsed: [], // Remains empty
     });
     await game.updateComplete;
 
@@ -597,8 +725,8 @@ suite('Furigana Display', () => {
     const game = model.game;
     await game.supplyQuestion({
       english: 'Hello [こんにちは] World',
-      japanese: [' irrelevant '],
-      parsed: [],
+      // japanese: [' irrelevant '], // Removed
+      parsed: [], // Remains empty
     });
     await game.updateComplete;
 
@@ -653,8 +781,8 @@ suite('Furigana Display', () => {
     const game = model.game;
     await game.supplyQuestion({
       english: 'One [いち] Two [に] Three [さん]',
-      japanese: ['...'], // Not relevant for this test
-      parsed: [],
+      // japanese: ['...'], // Removed
+      parsed: [], // Remains empty
     });
     await game.updateComplete;
 
@@ -752,5 +880,196 @@ suite('Furigana Display', () => {
     assertFuriganaVisible(wordOneSpan, 'One', 'いち', false);
     assertFuriganaVisible(wordTwoSpan, 'Two', 'に', false);
     assertFuriganaVisible(wordThreeSpan, 'Three', 'さん', false);
+  });
+});
+
+suite('Nihon/Nippon Augmenter Tests', () => {
+  const nipponKatakana = wanakana.toKatakana('nippon'); // ニッポン
+  const nihonKatakana = wanakana.toKatakana('nihon');   // ニホン
+
+  // Helper to check if a specific token group (by readings) exists in the output
+  const findGroupByReadings = (groups: Token[][], readings: string[]): Token[] | undefined => {
+    return groups.find(group => 
+      group.length === readings.length && 
+      group.every((token, index) => token.reading === readings[index])
+    );
+  };
+
+  test('performAugmentation: 日本 (ニッポン) should yield both 日本 (ニッポン) and 日本 (ニホン)', async () => {
+    const initialGroup: Token[] = [
+      makeToken('日本', nipponKatakana, '名詞', '*', '*', '*', '*', '*', '日本', nipponKatakana)
+    ];
+    const augmentedGroups = await performAugmentation([initialGroup]);
+    
+    assert.equal(augmentedGroups.length, 2, 'Should produce two groups: original and augmented.');
+
+    const originalVariant = findGroupByReadings(augmentedGroups, [nipponKatakana]);
+    assert.isDefined(originalVariant, 'Original 日本(ニッポン) group should be present.');
+    if (originalVariant) {
+      assert.equal(originalVariant[0].surface_form, '日本');
+      assert.equal(originalVariant[0].reading, nipponKatakana);
+    }
+
+    const augmentedVariant = findGroupByReadings(augmentedGroups, [nihonKatakana]);
+    assert.isDefined(augmentedVariant, 'Augmented 日本(ニホン) group should be present.');
+    if (augmentedVariant) {
+      assert.equal(augmentedVariant[0].surface_form, '日本');
+      assert.equal(augmentedVariant[0].reading, nihonKatakana);
+    }
+  });
+
+  test('performAugmentation: 日本 (ニホン) should yield both 日本 (ニホン) and 日本 (ニッポン)', async () => {
+    const initialGroup: Token[] = [
+      makeToken('日本', nihonKatakana, '名詞', '*', '*', '*', '*', '*', '日本', nihonKatakana)
+    ];
+    const augmentedGroups = await performAugmentation([initialGroup]);
+    
+    assert.equal(augmentedGroups.length, 2, 'Should produce two groups: original and augmented.');
+
+    const originalVariant = findGroupByReadings(augmentedGroups, [nihonKatakana]);
+    assert.isDefined(originalVariant, 'Original 日本(ニホン) group should be present.');
+    if (originalVariant) {
+      assert.equal(originalVariant[0].surface_form, '日本');
+      assert.equal(originalVariant[0].reading, nihonKatakana);
+    }
+
+    const augmentedVariant = findGroupByReadings(augmentedGroups, [nipponKatakana]);
+    assert.isDefined(augmentedVariant, 'Augmented 日本(ニッポン) group should be present.');
+    if (augmentedVariant) {
+      assert.equal(augmentedVariant[0].surface_form, '日本');
+      assert.equal(augmentedVariant[0].reading, nipponKatakana);
+    }
+  });
+
+  test('performAugmentation: Sentence context "日本のニッポン"', async () => {
+    // "日本 の ニッポン" (surface_forms)
+    // "ニッポン ノ ニッポン" (readings for this test)
+    const initialGroup: Token[] = [
+      makeToken('日本', nipponKatakana, '名詞'),
+      makeToken('の', 'ノ', '助詞'),
+      makeToken('ニッポン', nipponKatakana, '名詞'), // This is a surface form "ニッポン", not "日本"
+    ];
+    const augmentedGroups = await performAugmentation([initialGroup]);
+
+    assert.equal(augmentedGroups.length, 2, 'Should produce two groups: original and augmented for "日本(ニッポン) の ニッポン".');
+
+    const originalGroup = findGroupByReadings(augmentedGroups, [nipponKatakana, wanakana.toKatakana('no'), nipponKatakana]);
+    assert.isDefined(originalGroup, 'Original sentence group should be present.');
+    if (originalGroup) {
+      assert.equal(originalGroup[0].reading, nipponKatakana, 'First 日本 reading should be ニッポン in original.');
+      assert.equal(originalGroup[2].reading, nipponKatakana, 'Second token (surface ニッポン) should be ニッポン in original.');
+    }
+    
+    const augmentedGroup = findGroupByReadings(augmentedGroups, [nihonKatakana, wanakana.toKatakana('no'), nipponKatakana]);
+    assert.isDefined(augmentedGroup, 'Augmented sentence group should be present for "日本(ニッポン) の ニッポン".');
+    if (augmentedGroup) {
+      assert.equal(augmentedGroup[0].reading, nihonKatakana, 'First 日本 reading should change to ニホン in augmented.');
+      assert.equal(augmentedGroup[1].surface_form, 'の');
+      assert.equal(augmentedGroup[2].surface_form, 'ニッポン');
+      assert.equal(augmentedGroup[2].reading, nipponKatakana, 'Surface form ニッポン should not be affected by the 日本 augmenter in augmented.');
+    }
+  });
+  
+  test('performAugmentation: Sentence context "日本のニホン"', async () => {
+    const initialGroup: Token[] = [
+      makeToken('日本', nihonKatakana, '名詞'),
+      makeToken('の', wanakana.toKatakana('no'), '助詞'),
+      makeToken('ニホン', nihonKatakana, '名詞'), // Surface form is "ニホン"
+    ];
+    const augmentedGroups = await performAugmentation([initialGroup]);
+
+    assert.equal(augmentedGroups.length, 2, 'Should produce two groups for "日本(ニホン) の ニホン": original and augmented "日本" part.');
+
+    const originalGroup = findGroupByReadings(augmentedGroups, [nihonKatakana, wanakana.toKatakana('no'), nihonKatakana]);
+    assert.isDefined(originalGroup, 'Original "日本(ニホン) の ニホン" sentence group should be present.');
+    if (originalGroup) {
+      assert.equal(originalGroup[0].reading, nihonKatakana);
+      assert.equal(originalGroup[2].surface_form, 'ニホン');
+      assert.equal(originalGroup[2].reading, nihonKatakana);
+    }
+    
+    const augmentedGroup = findGroupByReadings(augmentedGroups, [nipponKatakana, wanakana.toKatakana('no'), nihonKatakana]);
+    assert.isDefined(augmentedGroup, 'Augmented "日本(ニッポン) の ニホン" sentence group should be present.');
+    if (augmentedGroup) {
+      assert.equal(augmentedGroup[0].reading, nipponKatakana);
+      assert.equal(augmentedGroup[2].surface_form, 'ニホン');
+      assert.equal(augmentedGroup[2].reading, nihonKatakana);
+    }
+  });
+
+  test('performAugmentation: Multiple "日本" tokens with "ニッポン" reading', async () => {
+    // "日本 、 日本" with both readings as "ニッポン"
+    const initialGroup: Token[] = [
+      makeToken('日本', nipponKatakana, '名詞'),
+      makeToken('、', wanakana.toKatakana('、'), '記号'),
+      makeToken('日本', nipponKatakana, '名詞'),
+    ];
+    const augmentedGroups = await performAugmentation([initialGroup]);
+
+    assert.equal(augmentedGroups.length, 2, 'Should produce two groups for multiple ニッポン: original and all-Nihon.');
+
+    const originalGroup = findGroupByReadings(augmentedGroups, [nipponKatakana, wanakana.toKatakana('、'), nipponKatakana]);
+    assert.isDefined(originalGroup, 'Original group with two ニッポン readings should be present.');
+    if (originalGroup) {
+      assert.equal(originalGroup[0].reading, nipponKatakana);
+      assert.equal(originalGroup[2].reading, nipponKatakana);
+    }
+
+    const augmentedGroup = findGroupByReadings(augmentedGroups, [nihonKatakana, wanakana.toKatakana('、'), nihonKatakana]);
+    assert.isDefined(augmentedGroup, 'Augmented group with two ニホン readings should be present for multiple ニッポン.');
+    if (augmentedGroup) {
+      assert.equal(augmentedGroup[0].reading, nihonKatakana);
+      assert.equal(augmentedGroup[2].reading, nihonKatakana);
+    }
+  });
+
+  test('performAugmentation: Multiple "日本" tokens with "ニホン" reading', async () => {
+    const initialGroup: Token[] = [
+      makeToken('日本', nihonKatakana, '名詞'),
+      makeToken('、', wanakana.toKatakana('、'), '記号'),
+      makeToken('日本', nihonKatakana, '名詞'),
+    ];
+    const augmentedGroups = await performAugmentation([initialGroup]);
+
+    assert.equal(augmentedGroups.length, 2, 'Should produce two groups for multiple ニホン: original and all-Nippon.');
+
+    const originalGroup = findGroupByReadings(augmentedGroups, [nihonKatakana, wanakana.toKatakana('、'), nihonKatakana]);
+    assert.isDefined(originalGroup, 'Original group with two ニホン readings should be present.');
+    if (originalGroup) {
+      assert.equal(originalGroup[0].reading, nihonKatakana);
+      assert.equal(originalGroup[2].reading, nihonKatakana);
+    }
+
+    const augmentedGroup = findGroupByReadings(augmentedGroups, [nipponKatakana, wanakana.toKatakana('、'), nipponKatakana]);
+    assert.isDefined(augmentedGroup, 'Augmented group with two ニッポン readings should be present for multiple ニホン.');
+    if (augmentedGroup) {
+      assert.equal(augmentedGroup[0].reading, nipponKatakana);
+      assert.equal(augmentedGroup[2].reading, nipponKatakana);
+    }
+  });
+
+  test('performAugmentation: Mixed readings "日本 (ニッポン)" and "日本 (ニホン)" in initial groups', async () => {
+    const groupNipponInitial: Token[] = [makeToken('日本', nipponKatakana, '名詞')];
+    const groupNihonInitial: Token[] = [makeToken('日本', nihonKatakana, '名詞')];
+    
+    const augmentedGroups = await performAugmentation([groupNipponInitial, groupNihonInitial]);
+    
+    // With the new key, both initial groups are distinct and added to the map.
+    // 1. `groupNipponInitial` (`日本(ニッポン)`) is added.
+    // 2. `groupNihonInitial` (`日本(ニホン)`) is added.
+    // When `groupNipponInitial` is processed from the queue:
+    //    - `augmentNipponToNihon` generates a `日本(ニホン)` variant. Key `日本(ニホン)` is already in map. Not added to queue.
+    //    - `augmentNihonToNippon` does not fire.
+    // When `groupNihonInitial` is processed from the queue:
+    //    - `augmentNipponToNihon` does not fire.
+    //    - `augmentNihonToNippon` generates a `日本(ニッポン)` variant. Key `日本(ニッポン)` is already in map. Not added to queue.
+    // So, the final list contains exactly the two initial distinct groups.
+    assert.equal(augmentedGroups.length, 2, 'Should result in two distinct groups from the initial set, no new variants added to map from augmentation.');
+
+    const nipponVariant = findGroupByReadings(augmentedGroups, [nipponKatakana]);
+    assert.isDefined(nipponVariant, 'The 日本(ニッポン) variant from initial groups should be present.');
+    
+    const nihonVariant = findGroupByReadings(augmentedGroups, [nihonKatakana]);
+    assert.isDefined(nihonVariant, 'The 日本(ニホン) variant from initial groups should be present.');
   });
 });

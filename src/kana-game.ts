@@ -56,6 +56,70 @@ function makeTokenAugmenter(
   };
 }
 
+/**
+ * Creates a TokenAugmenter for directly modifying token properties like 'reading'.
+ *
+ * @param guard - A function that checks if the tokens should be processed.
+ * @param readingChanger - A function that performs the token modifications.
+ *                         It should deep-clone tokens and return a Promise<Token[][]>.
+ * @returns A TokenAugmenter function.
+ */
+function makeReadingAugmenter(
+  guard: (tokens: Token[]) => boolean,
+  readingChanger: (tokens: Token[]) => Promise<Token[][]>
+): TokenAugmenter {
+  return async (tokens: Token[]): Promise<Token[][]> => {
+    if (!guard(tokens)) {
+      return Promise.resolve([]);
+    }
+    // The readingChanger is responsible for deep-cloning and returning new Token[][]
+    return readingChanger(tokens);
+  };
+}
+
+/**
+ * Creates a TokenAugmenter that swaps readings for a specific surface form.
+ * Example: change reading of "日本" from "ニッポン" to "ニホン".
+ *
+ * @param surfaceForm - The surface form of the token to target (e.g., "日本").
+ * @param readingToFind - The specific reading to find (e.g., "nippon"). Will be converted to Katakana.
+ * @param readingToReplace - The new reading to set (e.g., "nihon"). Will be converted to Katakana.
+ * @returns A TokenAugmenter function.
+ */
+function createReadingSwapAugmenter(
+  surfaceForm: string,
+  readingToFind: string,
+  readingToReplace: string
+): TokenAugmenter {
+  const katakanaReadingToFind = wanakana.toKatakana(readingToFind);
+  const katakanaReadingToReplace = wanakana.toKatakana(readingToReplace);
+
+  const guard = (tokens: Token[]): boolean => {
+    return tokens.some(
+      (t) => t.surface_form === surfaceForm && t.reading === katakanaReadingToFind
+    );
+  };
+
+  const readingChanger = async (tokens: Token[]): Promise<Token[][]> => {
+    let changed = false;
+    const clonedTokens = structuredClone(tokens); // Deep clone
+
+    for (const token of clonedTokens) {
+      if (token.surface_form === surfaceForm && token.reading === katakanaReadingToFind) {
+        token.reading = katakanaReadingToReplace;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      return Promise.resolve([clonedTokens]);
+    }
+    return Promise.resolve([]);
+  };
+
+  return makeReadingAugmenter(guard, readingChanger);
+}
+
 const augmentWatashiTokens = makeTokenAugmenter(
   (tokens) => tokens.some((t) => t.surface_form === '私'),
   (raw) => [raw.replace(/私/g, '僕')]
@@ -112,16 +176,23 @@ const augmentDropWatashiHa = makeTokenAugmenter(
   }
 );
 
+// const augmentNihonNippon and its helpers removed as per subtask.
+// Re-adding specific "日本" reading swap augmenters using the factory:
+const augmentNipponToNihon = createReadingSwapAugmenter('日本', 'nippon', 'nihon');
+const augmentNihonToNippon = createReadingSwapAugmenter('日本', 'nihon', 'nippon');
+
 const tokenAugmenters: TokenAugmenter[] = [
   augmentWatashiTokens,
   augmentBokuTokens,
+  augmentNipponToNihon, // Added
+  augmentNihonToNippon, // Added
   augmentAnataTokens,
   augmentAtashiTokens,
   augmentDesuDaTokens,
   augmentDropWatashiHa,
 ];
 
-async function augmentTokenGroups(
+export async function performAugmentation(
   initialGroups: Token[][]
 ): Promise<Token[][]> {
   // map rawSurface → tokens, to dedupe
@@ -131,9 +202,9 @@ async function augmentTokenGroups(
 
   // seed with the originals
   for (const grp of initialGroups) {
-    const raw = grp.map((t) => t.surface_form).join('');
-    if (!map.has(raw)) {
-      map.set(raw, grp);
+    const key = grp.map(t => `${t.surface_form}(${t.reading || ''})`).join('|');
+    if (!map.has(key)) {
+      map.set(key, grp);
       queue.push(grp);
     }
   }
@@ -144,9 +215,9 @@ async function augmentTokenGroups(
     for (const plugin of tokenAugmenters) {
       const results = await plugin(grp);
       for (const newGrp of results) {
-        const raw = newGrp.map((t) => t.surface_form).join('');
-        if (!map.has(raw)) {
-          map.set(raw, newGrp);
+        const key = newGrp.map(t => `${t.surface_form}(${t.reading || ''})`).join('|');
+        if (!map.has(key)) {
+          map.set(key, newGrp);
           queue.push(newGrp);
         }
       }
@@ -158,7 +229,7 @@ async function augmentTokenGroups(
 
 export interface Question {
   english: string;
-  japanese: string[];
+  // japanese: string[]; // Removed as per requirement
   parsed: Token[][];
 }
 
@@ -506,20 +577,29 @@ export class KanaGame extends LitElement {
    * @param question
    */
   async supplyQuestion(question: Question) {
-    const tokenizer = await tokenizerPromise;
-    const origGroups = await Promise.all(
-      question.japanese.map(
-        async (it) =>
-          (
-            await tokenizer.tokenize(it)
-          ).filter((t) => t.surface_form !== ' ') as Token[]
-      )
-    );
+    // const tokenizer = await tokenizerPromise; // Removed
+    // const origGroups = await Promise.all( // Removed
+    //   question.japanese.map( // Removed
+    //     async (it) => // Removed
+    //       ( // Removed
+    //         await tokenizer.tokenize(it) // Removed
+    //       ).filter((t) => t.surface_form !== ' ') as Token[] // Removed
+    //   ) // Removed
+    // ); // Removed
 
-    const allGroups = await augmentTokenGroups(origGroups);
+    // const allGroups = await performAugmentation(origGroups); // Removed
+
+    // Directly use question.parsed as allGroups
+    const allGroups = question.parsed;
 
     this.question = structuredClone(question);
-    this.question.parsed = allGroups;
+    // this.question.parsed is already set from the input 'question' object.
+    // No need to set it again if we are using 'question.parsed' directly as 'allGroups'.
+    // However, structuredClone creates a new object, so if 'allGroups' is used later,
+    // this.question.parsed should indeed be this cloned version or 'allGroups' itself.
+    // For clarity and safety, let's ensure this.question.parsed refers to the data we intend.
+    // Since 'allGroups' IS 'question.parsed', this line is okay:
+    this.question.parsed = allGroups; 
     this.parsedEnglish = this._parseEnglishString(question.english);
     this._furiganaVisibility = new Array(this.parsedEnglish.length).fill(false);
     const best = selectBestGroup(allGroups)!;
