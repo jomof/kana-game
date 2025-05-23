@@ -165,6 +165,13 @@ export interface Token extends kuromoji.IpadicFeatures {
   marked: boolean | undefined;
 }
 
+export interface ParsedEnglishPart {
+  englishWord: string;
+  furigana: string;
+}
+
+export type ParsedEnglish = ParsedEnglishPart[];
+
 /**
  * Recursive helper (unchanged).
  * @returns an array of token‐indices if `str` can be covered by a subsequence
@@ -397,6 +404,10 @@ export class KanaGame extends LitElement {
       width: 100%;
     }
 
+    .english-word[has-furigana] {
+      cursor: pointer;
+    }
+
     span#skeleton {
       font-family: 'Noto Sans JP', sans-serif;
       font-size: 22px;
@@ -473,9 +484,6 @@ export class KanaGame extends LitElement {
   `;
 
   @property({type: String})
-  english = 'I live in Seattle.';
-
-  @property({type: String})
   skeleton = '';
 
   @query('#kana-input')
@@ -484,6 +492,8 @@ export class KanaGame extends LitElement {
   @property({type: String, reflect: true})
   state: 'normal' | 'completed' | 'error' = 'normal';
 
+  private _showFuriganaForIndex: number | null = null;
+  public parsedEnglish: ParsedEnglish = [];
   question: Question | null = null;
 
   // For debugging: the hiragana readings of all possible answers.
@@ -506,7 +516,7 @@ export class KanaGame extends LitElement {
 
     this.question = structuredClone(question);
     this.question.parsed = allGroups;
-    this.english = question.english;
+    this.parsedEnglish = this._parseEnglishString(question.english);
     const best = selectBestGroup(allGroups)!;
     this.skeleton = formatTokenGroup(best, false);
     this.state = 'normal';
@@ -539,7 +549,18 @@ export class KanaGame extends LitElement {
 
   override render() {
     return html`
-      <span id="english" part="english">${this.english}</span><br />
+      <span id="english" part="english">
+        ${this.parsedEnglish.map((part, index) => html`
+          <span
+            class="english-word"
+            ?has-furigana=${part.furigana !== ''}
+            @click=${() => this._handleEnglishWordClick(index)}
+          >
+            ${this._showFuriganaForIndex === index && part.furigana
+              ? html`<ruby><rb>${part.englishWord}</rb><rt>${part.furigana}</rt></ruby>`
+              : part.englishWord}
+          </span> `)}
+      </span><br />
       <span id="skeleton" part="skeleton">${this.renderSkeleton()}</span><br />
       <div class="answer-box">
         <input
@@ -629,6 +650,20 @@ export class KanaGame extends LitElement {
     this.skeleton = formatTokenGroup(best!, showPunctuation);
   }
 
+  private _handleEnglishWordClick(index: number) {
+    const clickedPart = this.parsedEnglish[index];
+    if (clickedPart && clickedPart.furigana) {
+      if (this._showFuriganaForIndex === index) {
+        this._showFuriganaForIndex = null;
+      } else {
+        this._showFuriganaForIndex = index;
+      }
+    } else {
+      this._showFuriganaForIndex = null;
+    }
+    this.requestUpdate();
+  }
+
   private _updateDebugFields() {
     if (!this.question) return;
 
@@ -639,6 +674,19 @@ export class KanaGame extends LitElement {
     this.answerHiragana = groups.map((group) =>
       group.map((token) => wanakana.toHiragana(token.reading)).join(' ')
     );
+  }
+
+  private _parseEnglishString(eng: string): ParsedEnglish {
+    const regex = /(\w+)\s*(?:\[([^\]]+)\])?/g;
+    const parts: ParsedEnglish = [];
+    let match;
+    while ((match = regex.exec(eng)) !== null) {
+      parts.push({
+        englishWord: match[1],
+        furigana: match[2] || '',
+      });
+    }
+    return parts;
   }
 }
 

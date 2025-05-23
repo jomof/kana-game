@@ -113,6 +113,13 @@ suite('kana-game', () => {
     await model.game.updateComplete;
   }
 
+  async function clickEnglishWord(model: Model, wordIndex: number) {
+    const wordSpan = model.shadowRoot.querySelectorAll('#english .english-word')[wordIndex] as HTMLElement;
+    assert.ok(wordSpan, `English word span at index ${wordIndex} should exist`);
+    wordSpan.click();
+    await model.game.updateComplete;
+  }
+
   test('is defined', () => {
     const el = document.createElement('kana-game');
     assert.instanceOf(el, KanaGame);
@@ -407,5 +414,116 @@ suite('kana-game', () => {
     await sendInput(model, 'nipponnniikitainda');
     assert.equal(game.skeleton, '日本に行きたいんだ。');
     assert.equal(game.state, 'completed');
+  });
+});
+
+suite('Furigana Display', () => {
+  test('Test English String Parsing', async () => {
+    const model = await getModel();
+    const game = model.game;
+    await game.supplyQuestion({
+      english: 'Hello [こんにちは] World [せかい] Test',
+      japanese: [' irrelevant '],
+      parsed: [],
+    });
+    await game.updateComplete;
+    assert.deepEqual(game.parsedEnglish, [
+      { englishWord: 'Hello', furigana: 'こんにちは' },
+      { englishWord: 'World', furigana: 'せかい' },
+      { englishWord: 'Test', furigana: '' },
+    ]);
+  });
+
+  test('Test Initial Display', async () => {
+    const model = await getModel();
+    const game = model.game;
+    await game.supplyQuestion({
+      english: 'WordOne [FuriOne] WordTwo',
+      japanese: [' irrelevant '],
+      parsed: [],
+    });
+    await game.updateComplete;
+
+    const englishSpan = model.shadowRoot.querySelector('#english');
+    assert.ok(englishSpan, '#english span should exist');
+    // Check overall text content, ensuring spaces are handled as rendered (one space after each word)
+    assert.equal(englishSpan.textContent?.trim().replace(/\s+/g, ' '), 'WordOne WordTwo');
+
+    const wordSpans = model.shadowRoot.querySelectorAll('#english .english-word');
+    assert.equal(wordSpans.length, 2, 'Should find two english-word spans');
+
+    const firstWordSpan = wordSpans[0] as HTMLElement;
+    assert.equal(firstWordSpan.textContent?.trim(), 'WordOne');
+    assert.isFalse(firstWordSpan.innerHTML.includes('<ruby>'), 'First word should not initially show ruby tags');
+    assert.isTrue(firstWordSpan.hasAttribute('has-furigana'), 'First word should have has-furigana attribute');
+
+    const secondWordSpan = wordSpans[1] as HTMLElement;
+    assert.equal(secondWordSpan.textContent?.trim(), 'WordTwo');
+    assert.isFalse(secondWordSpan.innerHTML.includes('<ruby>'), 'Second word should not initially show ruby tags');
+    assert.isFalse(secondWordSpan.hasAttribute('has-furigana'), 'Second word should not have has-furigana attribute');
+  });
+
+  test('Test Clicking a Word with Furigana', async () => {
+    const model = await getModel();
+    const game = model.game;
+    await game.supplyQuestion({
+      english: 'Hello [こんにちは] World',
+      japanese: [' irrelevant '],
+      parsed: [],
+    });
+    await game.updateComplete;
+
+    await clickEnglishWord(model, 0); // Click "Hello"
+
+    const wordSpans = model.shadowRoot.querySelectorAll('#english .english-word');
+    const helloSpan = wordSpans[0] as HTMLElement;
+    const worldSpan = wordSpans[1] as HTMLElement;
+
+    assert.include(helloSpan.innerHTML, '<ruby><rb>Hello</rb><rt>こんにちは</rt></ruby>', 'Hello should show furigana');
+    assert.equal(worldSpan.textContent?.trim(), 'World', 'World should remain plain text');
+    assert.isFalse(worldSpan.innerHTML.includes('<ruby>'), 'World should not show furigana');
+  });
+
+  test('Test Clicking a Word without Furigana', async () => {
+    const model = await getModel();
+    const game = model.game;
+    await game.supplyQuestion({
+      english: 'Hello [こんにちは] World',
+      japanese: [' irrelevant '],
+      parsed: [],
+    });
+    await game.updateComplete;
+
+    await clickEnglishWord(model, 0); // Click "Hello" to show its furigana
+    await clickEnglishWord(model, 1); // Click "World" (no furigana)
+
+    const wordSpans = model.shadowRoot.querySelectorAll('#english .english-word');
+    const helloSpan = wordSpans[0] as HTMLElement;
+    const worldSpan = wordSpans[1] as HTMLElement;
+
+    assert.equal(helloSpan.textContent?.trim(), 'Hello', 'Hello should be plain text again');
+    assert.isFalse(helloSpan.innerHTML.includes('<ruby>'), 'Furigana for Hello should be hidden');
+    assert.equal(worldSpan.textContent?.trim(), 'World', 'World should remain plain text');
+    assert.isFalse(worldSpan.innerHTML.includes('<ruby>'), 'World should not show furigana');
+  });
+
+  test('Test Toggling Furigana (Clicking Selected Word Again)', async () => {
+    const model = await getModel();
+    const game = model.game;
+    await game.supplyQuestion({
+      english: 'Hello [こんにちは] World',
+      japanese: [' irrelevant '],
+      parsed: [],
+    });
+    await game.updateComplete;
+
+    await clickEnglishWord(model, 0); // Click "Hello" (shows furigana)
+    let helloSpan = model.shadowRoot.querySelectorAll('#english .english-word')[0] as HTMLElement;
+    assert.include(helloSpan.innerHTML, '<ruby><rb>Hello</rb><rt>こんにちは</rt></ruby>', 'Furigana should be visible after first click');
+
+    await clickEnglishWord(model, 0); // Click "Hello" again (hides furigana)
+    helloSpan = model.shadowRoot.querySelectorAll('#english .english-word')[0] as HTMLElement; // Re-query after update
+    assert.equal(helloSpan.textContent?.trim(), 'Hello');
+    assert.isFalse(helloSpan.innerHTML.includes('<ruby>'), 'Furigana should be hidden after second click');
   });
 });
