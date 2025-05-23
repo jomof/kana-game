@@ -158,7 +158,12 @@ suite('kana-game', () => {
       parsed: [],
     });
     await game.updateComplete;
-    assert.equal(game.english, 'I am a teacher.');
+    assert.deepEqual(game.parsedEnglish, [
+      { englishWord: "I", furigana: "" },
+      { englishWord: "am", furigana: "" },
+      { englishWord: "a", furigana: "" },
+      { englishWord: "teacher.", furigana: "" }
+    ]);
   });
 
   test('converts romaji input to kana using WanaKana', async () => {
@@ -362,7 +367,12 @@ suite('kana-game', () => {
       japanese: ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
     } as Question);
     await game.updateComplete;
-    assert.equal(game.english, 'I am a student.');
+    assert.deepEqual(game.parsedEnglish, [
+      { englishWord: "I", furigana: "" },
+      { englishWord: "am", furigana: "" },
+      { englishWord: "a", furigana: "" },
+      { englishWord: "student.", furigana: "" }
+    ]);
     assert.isNotNull(game.question);
     await sendInput(model, 'da');
     assert.equal(game.state, 'normal');
