@@ -34,10 +34,10 @@ type TokenAugmenter = (tokens: Token[]) => Promise<Token[][]>;
 
 /**
  * Creates a TokenAugmenter by:
- *  – checking `guard(tokens)`  
- *  – joining tokens → raw string  
- *  – running replacer(raw) → [variant1, variant2…]  
- *  – tokenizing each variant → Token[]  
+ *  – checking `guard(tokens)`
+ *  – joining tokens → raw string
+ *  – running replacer(raw) → [variant1, variant2…]
+ *  – tokenizing each variant → Token[]
  */
 function makeTokenAugmenter(
   guard: (tokens: Token[]) => boolean,
@@ -80,7 +80,8 @@ const augmentDesuDaTokens = makeTokenAugmenter(
   (tokens) => {
     const n = tokens.length;
     if (n < 2) return false;
-    const pen = tokens[n - 2], last = tokens[n - 1];
+    const pen = tokens[n - 2],
+      last = tokens[n - 1];
     return (
       pen.surface_form === 'です' &&
       pen.pos === '助動詞' &&
@@ -107,7 +108,7 @@ const augmentDropWatashiHa = makeTokenAugmenter(
   // Replacer: lexically cut off the leading “私は”
   (raw) => {
     const dropped = raw.trim().slice('私 は'.length);
-    return [ dropped.trim() ];
+    return [dropped.trim()];
   }
 );
 
@@ -435,26 +436,26 @@ export class KanaGame extends LitElement {
       border-radius: 8px;
     }
 
-          @keyframes shake {
-        0% {
-          transform: translateX(0);
-        }
-        20% {
-          transform: translateX(-4px);
-        }
-        40% {
-          transform: translateX(4px);
-        }
-        60% {
-          transform: translateX(-4px);
-        }
-        80% {
-          transform: translateX(4px);
-        }
-        100% {
-          transform: translateX(0);
-        }
+    @keyframes shake {
+      0% {
+        transform: translateX(0);
       }
+      20% {
+        transform: translateX(-4px);
+      }
+      40% {
+        transform: translateX(4px);
+      }
+      60% {
+        transform: translateX(-4px);
+      }
+      80% {
+        transform: translateX(4px);
+      }
+      100% {
+        transform: translateX(0);
+      }
+    }
 
     @media (prefers-color-scheme: dark) {
       :host {
@@ -493,7 +494,7 @@ export class KanaGame extends LitElement {
   @property({type: String, reflect: true})
   state: 'normal' | 'completed' | 'error' = 'normal';
 
-  private _showFuriganaForIndex: number | null = null;
+  private _furiganaVisibility: boolean[] = [];
   public parsedEnglish: ParsedEnglish = [];
   question: Question | null = null;
 
@@ -507,9 +508,11 @@ export class KanaGame extends LitElement {
   async supplyQuestion(question: Question) {
     const tokenizer = await tokenizerPromise;
     const origGroups = await Promise.all(
-      question.japanese.map(async (it) =>
-        (await tokenizer.tokenize(it))
-          .filter(t => t.surface_form !== ' ') as Token[]
+      question.japanese.map(
+        async (it) =>
+          (
+            await tokenizer.tokenize(it)
+          ).filter((t) => t.surface_form !== ' ') as Token[]
       )
     );
 
@@ -518,6 +521,7 @@ export class KanaGame extends LitElement {
     this.question = structuredClone(question);
     this.question.parsed = allGroups;
     this.parsedEnglish = this._parseEnglishString(question.english);
+    this._furiganaVisibility = new Array(this.parsedEnglish.length).fill(false);
     const best = selectBestGroup(allGroups)!;
     this.skeleton = formatTokenGroup(best, false);
     this.state = 'normal';
@@ -551,17 +555,23 @@ export class KanaGame extends LitElement {
   override render() {
     return html`
       <span id="english" part="english">
-        ${this.parsedEnglish.map((part, index) => html`
-          <span
-            class="english-word"
-            ?has-furigana=${part.furigana !== ''}
-            @click=${() => this._handleEnglishWordClick(index)}
-          >
-            ${this._showFuriganaForIndex === index && part.furigana
-              ? html`<ruby><rb>${part.englishWord}</rb><rt>${part.furigana}</rt></ruby>`
-              : part.englishWord}
-          </span> `)}
-      </span><br />
+        ${this.parsedEnglish.map(
+          (part, index) => html`
+            <!-- lit-analyzer ignore no-unknown-attribute -->
+            <span
+              class="english-word"
+              ?has-furigana=${part.furigana !== ''}
+              @click=${() => this._handleEnglishWordClick(index)}
+            >
+              ${this._furiganaVisibility[index] && part.furigana
+                ? html`<ruby
+                    ><rb>${part.englishWord}</rb><rt>${part.furigana}</rt></ruby
+                  >`
+                : part.englishWord}
+            </span>
+          `
+        )} </span
+      ><br />
       <span id="skeleton" part="skeleton">${this.renderSkeleton()}</span><br />
       <div class="answer-box">
         <input
@@ -652,16 +662,25 @@ export class KanaGame extends LitElement {
   }
 
   private _handleEnglishWordClick(index: number) {
-    const clickedPart = this.parsedEnglish[index];
-    if (clickedPart && clickedPart.furigana) {
-      if (this._showFuriganaForIndex === index) {
-        this._showFuriganaForIndex = null;
+    if (
+      this.parsedEnglish &&
+      this.parsedEnglish[index] &&
+      this.parsedEnglish[index].furigana
+    ) {
+      // Check if the index is valid for _furiganaVisibility
+      if (index < this._furiganaVisibility.length) {
+        this._furiganaVisibility[index] = !this._furiganaVisibility[index];
       } else {
-        this._showFuriganaForIndex = index;
+        // This case should ideally not happen if _furiganaVisibility is always synced with parsedEnglish
+        console.error(
+          'Furigana visibility array out of sync with parsed English parts.'
+        );
       }
-    } else {
-      this._showFuriganaForIndex = null;
     }
+    // For words without furigana, or if the part doesn't exist, we do nothing to the visibility state.
+    // The old logic used to set _showFuriganaForIndex to null, effectively hiding other furigana.
+    // The new requirement is that other furigana should remain visible.
+
     this.requestUpdate();
   }
 
