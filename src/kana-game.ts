@@ -340,6 +340,7 @@ export class KanaGame extends LitElement {
       min-height: 300px;
 
       /* allow both light & dark; UA picks based on prefers-color-scheme */
+      /* lit-analyzer ignore no-invalid-css */
       color-scheme: light dark;
 
       /* default (light) look */

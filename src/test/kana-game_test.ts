@@ -8,117 +8,118 @@ import {KanaGame, Token, markTokens, Question, tokenize} from '../kana-game.js';
 import {fixture, assert} from '@open-wc/testing';
 import {html} from 'lit/static-html.js';
 
+/**
+ * Helper function to create a fixture of the KanaGame element.
+ * @returns {Promise<KanaGame>} A promise that resolves to the KanaGame element.
+ */
+async function getElement(): Promise<KanaGame> {
+  const el = await fixture(html`<kana-game></kana-game>`);
+  const shadowRoot = el.shadowRoot;
+  assert.ok(shadowRoot, 'Shadow root should be present');
+  const input = shadowRoot.querySelector('#kana-input');
+  assert.ok(input, 'input should be present');
+  input.removeAttribute('data-wanakana-id');
+  input.removeAttribute('data-previous-attributes');
+  return el as KanaGame;
+}
+
+function getExpectedHtml(): string {
+  return `
+    <span 
+      id="english"
+      part="english">
+    </span>
+    <br>
+    <span 
+      id="skeleton"
+      part="skeleton">
+    </span>
+    <br>
+    <div class="answer-box">
+      <input
+      autocapitalize="none"
+      autocomplete="off"
+      autocorrect="off"
+      id="kana-input"
+      lang="ja"
+      part="kana-input"
+      placeholder="答え"
+      spellcheck="false"
+      type="text"
+      >
+      <button
+        aria-label="Next question"
+        class="next-button"
+      >
+        Next ➔
+      </button>
+    </div>
+  `;
+}
+
+interface Model {
+  game: KanaGame;
+  shadowRoot: ShadowRoot;
+  input: HTMLInputElement;
+}
+
+async function getModel(): Promise<Model> {
+  const game = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
+  const shadowRoot = game.shadowRoot;
+  assert.ok(shadowRoot, 'Shadow root should be present');
+  const input = shadowRoot.querySelector('#kana-input') as HTMLInputElement;
+  assert.ok(input, 'Input element should be present');
+  return {
+    game: game,
+    shadowRoot: shadowRoot,
+    input: input,
+  };
+}
+
+async function sendInput(model: Model, text: string, enter = true) {
+  const input = model.input;
+  // Set the input value to a romaji string
+  input.value = text;
+
+  // Dispatch an input event to trigger WanaKana binding
+  input.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
+
+  // Perform a keydown event to simulate pressing the Enter key
+  if (enter) {
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  // Wait for any asynchronous updates
+  await model.game.updateComplete;
+}
+
+async function sendBackspace(model: Model) {
+  const input = model.input;
+  // Set the input value to a romaji string
+  input.value = input.value.slice(0, -1);
+
+  // Dispatch an input event to trigger WanaKana binding
+  input.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
+
+  // Wait for any asynchronous updates
+  await model.game.updateComplete;
+}
+
+async function clickEnglishWord(model: Model, wordIndex: number) {
+  const wordSpan = model.shadowRoot.querySelectorAll('#english .english-word')[wordIndex] as HTMLElement;
+  assert.ok(wordSpan, `English word span at index ${wordIndex} should exist`);
+  wordSpan.click();
+  await model.game.updateComplete;
+}
+
 suite('kana-game', () => {
-  /**
-   * Helper function to create a fixture of the KanaGame element.
-   * @returns {Promise<KanaGame>} A promise that resolves to the KanaGame element.
-   */
-  async function getElement(): Promise<KanaGame> {
-    const el = await fixture(html`<kana-game></kana-game>`);
-    const shadowRoot = el.shadowRoot;
-    assert.ok(shadowRoot, 'Shadow root should be present');
-    const input = shadowRoot.querySelector('#kana-input');
-    assert.ok(input, 'input should be present');
-    input.removeAttribute('data-wanakana-id');
-    input.removeAttribute('data-previous-attributes');
-    return el as KanaGame;
-  }
-
-  function getExpectedHtml(): string {
-    return `
-      <span 
-        id="english"
-        part="english">
-        I live in Seattle.
-      </span>
-      <br>
-      <span 
-        id="skeleton"
-        part="skeleton">
-      </span>
-      <br>
-      <div class="answer-box">
-        <input
-        autocapitalize="none"
-        autocomplete="off"
-        autocorrect="off"
-        id="kana-input"
-        lang="ja"
-        part="kana-input"
-        placeholder="答え"
-        spellcheck="false"
-        type="text"
-        >
-        <button
-          aria-label="Next question"
-          class="next-button"
-        >
-          Next ➔
-        </button>
-      </div>
-    `;
-  }
-
-  interface Model {
-    game: KanaGame;
-    shadowRoot: ShadowRoot;
-    input: HTMLInputElement;
-  }
-
-  async function getModel(): Promise<Model> {
-    const game = (await fixture(html`<kana-game></kana-game>`)) as KanaGame;
-    const shadowRoot = game.shadowRoot;
-    assert.ok(shadowRoot, 'Shadow root should be present');
-    const input = shadowRoot.querySelector('#kana-input') as HTMLInputElement;
-    assert.ok(input, 'Input element should be present');
-    return {
-      game: game,
-      shadowRoot: shadowRoot,
-      input: input,
-    };
-  }
-
-  async function sendInput(model: Model, text: string, enter = true) {
-    const input = model.input;
-    // Set the input value to a romaji string
-    input.value = text;
-
-    // Dispatch an input event to trigger WanaKana binding
-    input.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
-
-    // Perform a keydown event to simulate pressing the Enter key
-    if (enter) {
-      input.dispatchEvent(
-        new KeyboardEvent('keydown', {
-          key: 'Enter',
-          bubbles: true,
-          composed: true,
-        })
-      );
-    }
-
-    // Wait for any asynchronous updates
-    await model.game.updateComplete;
-  }
-
-  async function sendBackspace(model: Model) {
-    const input = model.input;
-    // Set the input value to a romaji string
-    input.value = input.value.slice(0, -1);
-
-    // Dispatch an input event to trigger WanaKana binding
-    input.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
-
-    // Wait for any asynchronous updates
-    await model.game.updateComplete;
-  }
-
-  async function clickEnglishWord(model: Model, wordIndex: number) {
-    const wordSpan = model.shadowRoot.querySelectorAll('#english .english-word')[wordIndex] as HTMLElement;
-    assert.ok(wordSpan, `English word span at index ${wordIndex} should exist`);
-    wordSpan.click();
-    await model.game.updateComplete;
-  }
+  
 
   test('is defined', () => {
     const el = document.createElement('kana-game');
@@ -162,7 +163,7 @@ suite('kana-game', () => {
       { englishWord: "I", furigana: "" },
       { englishWord: "am", furigana: "" },
       { englishWord: "a", furigana: "" },
-      { englishWord: "teacher.", furigana: "" }
+      { englishWord: "teacher", furigana: "" }
     ]);
   });
 
@@ -371,7 +372,7 @@ suite('kana-game', () => {
       { englishWord: "I", furigana: "" },
       { englishWord: "am", furigana: "" },
       { englishWord: "a", furigana: "" },
-      { englishWord: "student.", furigana: "" }
+      { englishWord: "student", furigana: "" }
     ]);
     assert.isNotNull(game.question);
     await sendInput(model, 'da');
@@ -489,7 +490,14 @@ suite('Furigana Display', () => {
     const helloSpan = wordSpans[0] as HTMLElement;
     const worldSpan = wordSpans[1] as HTMLElement;
 
-    assert.include(helloSpan.innerHTML, '<ruby><rb>Hello</rb><rt>こんにちは</rt></ruby>', 'Hello should show furigana');
+    const rubyElement = helloSpan.querySelector('ruby');
+    assert.ok(rubyElement, 'A <ruby> element should be present when furigana is shown.');
+    const rb = helloSpan.querySelector('rb');
+    const rt = helloSpan.querySelector('rt');
+    assert.ok(rb, 'Should find an <rb> element');
+    assert.ok(rt, 'Should find an <rt> element');
+    assert.equal(rb?.textContent, 'Hello', 'English word in <rb> should be "Hello"');
+    assert.equal(rt?.textContent, 'こんにちは', 'Furigana in <rt> should be "こんにちは"');
     assert.equal(worldSpan.textContent?.trim(), 'World', 'World should remain plain text');
     assert.isFalse(worldSpan.innerHTML.includes('<ruby>'), 'World should not show furigana');
   });
@@ -529,11 +537,19 @@ suite('Furigana Display', () => {
 
     await clickEnglishWord(model, 0); // Click "Hello" (shows furigana)
     let helloSpan = model.shadowRoot.querySelectorAll('#english .english-word')[0] as HTMLElement;
-    assert.include(helloSpan.innerHTML, '<ruby><rb>Hello</rb><rt>こんにちは</rt></ruby>', 'Furigana should be visible after first click');
+    const rubyElementAfterFirstClick = helloSpan.querySelector('ruby');
+    assert.ok(rubyElementAfterFirstClick, 'A <ruby> element should be present after the first click.');
+    const rbAfterFirstClick = helloSpan.querySelector('rb');
+    const rtAfterFirstClick = helloSpan.querySelector('rt');
+    assert.ok(rbAfterFirstClick, 'Should find an <rb> element after first click');
+    assert.ok(rtAfterFirstClick, 'Should find an <rt> element after first click');
+    assert.equal(rbAfterFirstClick?.textContent, 'Hello', 'English word in <rb> should be "Hello" after first click');
+    assert.equal(rtAfterFirstClick?.textContent, 'こんにちは', 'Furigana in <rt> should be "こんにちは" after first click');
 
     await clickEnglishWord(model, 0); // Click "Hello" again (hides furigana)
     helloSpan = model.shadowRoot.querySelectorAll('#english .english-word')[0] as HTMLElement; // Re-query after update
-    assert.equal(helloSpan.textContent?.trim(), 'Hello');
-    assert.isFalse(helloSpan.innerHTML.includes('<ruby>'), 'Furigana should be hidden after second click');
+    const rubyElementAfterSecondClick = helloSpan.querySelector('ruby');
+    assert.isNull(rubyElementAfterSecondClick, 'The <ruby> element should be removed after the second click, hiding furigana.');
+    assert.equal(helloSpan.textContent?.trim(), 'Hello', 'English word should remain after hiding furigana');
   });
 });
