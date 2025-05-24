@@ -10,7 +10,15 @@
     "kana-game.d.ts",
     "kana-game.d.ts.map",
     "kana-game.js",
-    "kana-game.js.map"
+    "kana-game.js.map",
+    "augment.d.ts",
+    "augment.d.ts.map",
+    "augment.js",
+    "augment.js.map",
+    "tokenize.d.ts",
+    "tokenize.d.ts.map",
+    "tokenize.js",
+    "tokenize.js.map"
   ],
   "repository": {
     "type": "git",

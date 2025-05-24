@@ -19,7 +19,7 @@ const loader: kuromoji.LoaderConfig = {
   },
 };
 
-const tokenizerPromise = (new kuromoji.TokenizerBuilder({loader}).build());
+const tokenizerPromise = new kuromoji.TokenizerBuilder({loader}).build();
 tokenizerPromise.catch((e) => console.error('tokenizer failed to load', e));
 
 export function tokenize(text: string): Promise<kuromoji.IpadicFeatures[]> {

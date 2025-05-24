@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import { LitElement, PropertyValues, html, css } from 'lit';
-import { customElement, property, query } from 'lit/decorators.js';
+import {LitElement, PropertyValues, html, css} from 'lit';
+import {customElement, property, query} from 'lit/decorators.js';
 import * as wanakana from 'wanakana';
 import * as kuromoji from '@patdx/kuromoji';
-import { tokenize } from './tokenize.js';
-import { augmentTokenGroups } from '../augment';
+import {tokenize} from './tokenize.js';
+import {augmentTokenGroups} from './augment.js';
 
 export interface Token extends kuromoji.IpadicFeatures {
   marked: boolean | undefined;
@@ -17,15 +17,17 @@ export interface Token extends kuromoji.IpadicFeatures {
 
 export async function makeQuestion(
   english: string,
-  japanese: string[]) : Promise<Question> {
-    const groups = await Promise.all(
-      japanese.map(async (it) => await tokenize(it))
-    );
-    const parsed = (await augmentTokenGroups(groups)).map ((it) => it as Token[]);
-    return {
-      english: english,
-      parsed: parsed
-    } as Question;
+  japanese: string[]
+): Promise<Question> {
+  const groups = await Promise.all(
+    japanese.map(async (it) => await tokenize(it))
+  );
+  const parsed = (await augmentTokenGroups(groups)) as Token[][];
+  parsed.forEach((group) => group.forEach((token) => (token.marked = false)));
+  return {
+    english: english,
+    parsed: parsed,
+  } as Question;
 }
 
 export interface Question {
@@ -142,8 +144,8 @@ function anyMarked(result: {matched: number[] | null}[]): boolean {
  * @param groups  An array of Token[] candidate sequences.
  * @returns       The best Token[] (or `null` if `groups` is empty).
  */
-function selectBestGroup(groups: Token[][]): Token[] | null {
-  if (groups.length === 0) return null;
+function selectBestGroup(groups: Token[][]): Token[] {
+  if (groups.length === 0) throw new Error('No groups provided');
 
   let bestGroup = groups[0];
   let bestMarked = bestGroup.filter((t) => t.marked).length;
@@ -377,13 +379,12 @@ export class KanaGame extends LitElement {
    * Called to supply a new question to the game.
    * @param question
    */
- async supplyQuestion(question: Question) {
+  async supplyQuestion(question: Question) {
     const allGroups = question.parsed;
     this.question = structuredClone(question);
     this.parsedEnglish = this._parseEnglishString(question.english);
     this._furiganaVisibility = new Array(this.parsedEnglish.length).fill(false);
     const best = selectBestGroup(allGroups)!;
-    console.log('supplyQuestion', formatTokenGroup(best, false));
     this.skeleton = formatTokenGroup(best, false);
     this.state = 'normal';
     this.kana.value = '';
@@ -396,6 +397,11 @@ export class KanaGame extends LitElement {
       wanakana.bind(this.kana, {IMEMode: true});
       this.kana.focus();
     }
+  }
+  override connectedCallback() {
+    super.connectedCallback();
+    // fire & forget: warm up the tokenizer
+    tokenize(''); // this will load the dictionary
   }
 
   protected override updated(changed: PropertyValues) {
@@ -512,8 +518,6 @@ export class KanaGame extends LitElement {
     } else {
       this.state = 'normal';
     }
-
-    console.log('handleKeydown', formatTokenGroup(best!, showPunctuation));
     this.skeleton = formatTokenGroup(best!, showPunctuation);
   }
 

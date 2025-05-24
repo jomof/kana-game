@@ -49,65 +49,37 @@
     <pre id="debug"></pre>
 
     <script type="module">
+      import {makeQuestion} from '../kana-game.js';
+
       // Japanese annotations on 'english' words are base form if verbs.
       let questions = [
-        {
-          id: 0,
-          english: 'I live[すむ] in Seattle[シアトル].',
-          japanese: [
-            '私 は シアトル に 住んでいます。',
-            '私 は シアトル に 住んでる。',
-          ],
-        },
-        {
-          id: 1,
-          english: 'I am a student[がくせい].',
-          japanese: ['私 は 学生 です。'],
-        },
-        {
-          id: 2,
-          english: 'I am a teacher[せんせい].',
-          japanese: ['私 は 先生 です。'],
-        },
-        {
-          id: 3,
-          english: 'I eat[たべる] sushi[すし] every[まい] day[にち].',
-          japanese: [
-            '私 は 毎 日 寿司 を 食べます。',
-            '私 は 毎 日 寿司 を 食べる。',
-          ],
-        },
-        {
-          id: 4,
-          english: 'I can speak[はなす] Japanese[にほんご].',
-          japanese: [
-            '私 は 日本語 を 話すこと が できます。',
-            '私 は 日本語 を 話すこと が できる。',
-            '私 は 日本語 が 話せます。',
-            '私 は 日本語 が 話せる。',
-          ],
-        },
-        {
-          id: 5,
-          english: 'I went[いく] to Tokyo[とうきょう] last year[きょねん].',
-          japanese: [
-            '私 は 去年 東京 に 行きました。',
-            '私 は 去年 東京 に 行った。',
-          ],
-        },
-        {
-          id: 6,
-          english: 'I am reading[よむ] a book[ほん] right now[いま].',
-          japanese: [
-            '私 は 今 本 を 読んでいます。',
-            '私 は 今 本 を 読んでいる。',
-          ],
-        },
-        {
-          id: 7,
-          english: 'I want to go[いく] to Japan[にほん].',
-          japanese: ['私 は 日本 に 行きたい です。'],
-        },
+        makeQuestion('I live[すむ] in Seattle[シアトル].', [
+          '私 は シアトル に 住んでいます。',
+          '私 は シアトル に 住んでる。',
+        ]),
+        makeQuestion('I am a student[がくせい].', ['私 は 学生 です。']),
+        makeQuestion('I am a teacher[せんせい].', ['私 は 先生 です。']),
+        makeQuestion('I eat[たべる] sushi[すし] every[まい] day[にち].', [
+          '私 は 毎 日 寿司 を 食べます。',
+          '私 は 毎 日 寿司 を 食べる。',
+        ]),
+        makeQuestion('I can speak[はなす] Japanese[にほんご].', [
+          '私 は 日本語 を 話すこと が できます。',
+          '私 は 日本語 を 話すこと が できる。',
+          '私 は 日本語 が 話せます。',
+          '私 は 日本語 が 話せる。',
+        ]),
+        makeQuestion('I went[いく] to Tokyo[とうきょう] last year[きょねん].', [
+          '私 は 去年 東京 に 行きました。',
+          '私 は 去年 東京 に 行った。',
+        ]),
+        makeQuestion('I am reading[よむ] a book[ほん] right now[いま].', [
+          '私 は 今 本 を 読んでいます。',
+          '私 は 今 本 を 読んでいる。',
+        ]),
+        makeQuestion('I want to go[いく] to Japan[にほん].', [
+          '私 は 日本 に 行きたい です。',
+        ]),
       ];
 
       window.addEventListener('DOMContentLoaded', async () => {
@@ -120,12 +92,12 @@
         );
         await game.updateComplete;
         let current = 6;
-        game.supplyQuestion(questions[current]);
+        game.supplyQuestion(await questions[current]);
 
-        game.addEventListener('next-question', () => {
+        game.addEventListener('next-question', async () => {
           // advance index (wrap if you like)
           current = (current + 1) % questions.length;
-          game.supplyQuestion(questions[current]);
+          game.supplyQuestion(await questions[current]);
         });
       });
     </script>

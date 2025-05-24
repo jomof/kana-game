@@ -7,9 +7,7 @@
 import {IpadicFeatures} from '@patdx/kuromoji';
 import {tokenize} from './tokenize.js';
 
-
-
-type TokenAugmenter = (tokens: IpadicFeatures[]) => Promise<IpadicFeatures [][]>;
+type TokenAugmenter = (tokens: IpadicFeatures[]) => Promise<IpadicFeatures[][]>;
 
 /**
  * Creates a TokenAugmenter by:
@@ -25,8 +23,9 @@ function makeTokenAugmenter(
   return async (tokens) => {
     if (!guard(tokens)) return [];
     const raw = tokens
-        .filter((t) => t.surface_form.trim().length !== 0) // filter out empty tokens
-        .map((t) => t.surface_form).join(' ');
+      .filter((t) => t.surface_form.trim().length !== 0) // filter out empty tokens
+      .map((t) => t.surface_form)
+      .join(' ');
     const variants = replacer(raw);
     const out: IpadicFeatures[][] = [];
     for (const text of variants) {
@@ -40,6 +39,14 @@ function makeTokenAugmenter(
 const augmentWatashiTokens = makeTokenAugmenter(
   (tokens) => tokens.some((t) => t.surface_form === '私'),
   (raw) => [raw.replace(/私/g, '僕')]
+);
+
+const addWatashiHaRemoved = makeTokenAugmenter(
+  (tokens) =>
+    tokens.length > 1 &&
+    tokens[0].surface_form === '私' &&
+    tokens[1].surface_form === 'は',
+  (raw) => [raw.replace(/私 は /g, '')]
 );
 
 const augmentBokuTokens = makeTokenAugmenter(
@@ -115,18 +122,17 @@ export function makeReadingModifierAugmenter(
 
 const tokenAugmenters: TokenAugmenter[] = [
   augmentWatashiTokens,
+  addWatashiHaRemoved,
   augmentBokuTokens,
   augmentAnataTokens,
   augmentAtashiTokens,
   augmentDesuDaTokens,
   augmentDropWatashiHa,
   makeReadingModifierAugmenter('日本', 'ニッポン', 'ニホン'),
-  makeReadingModifierAugmenter('日本', 'ニホン', 'ニッポン')
+  makeReadingModifierAugmenter('日本', 'ニホン', 'ニッポン'),
 ];
 
-export function toLexicalKey(
-  tokens: IpadicFeatures[]
-): string {
+export function toLexicalKey(tokens: IpadicFeatures[]): string {
   return tokens.map((t) => `${t.surface_form}(${t.reading})`).join('|');
 }
 
@@ -139,16 +145,19 @@ export async function augmentTokenGroups(
   const queue: IpadicFeatures[][] = [];
 
   function addToQueue(tokens: IpadicFeatures[]) {
-    const key = toLexicalKey(tokens);
+    const noWhitespace = tokens.filter(
+      (it) => it.surface_form.trim().length !== 0
+    );
+    const key = toLexicalKey(noWhitespace);
     if (!map.has(key)) {
-      map.set(key, tokens);
-      queue.push(tokens);
+      map.set(key, noWhitespace);
+      queue.push(noWhitespace);
     }
   }
 
   // seed with the originals
   for (const grp of initialGroups) {
-    addToQueue(grp)
+    addToQueue(grp);
   }
 
   // process until no new groups are produced
@@ -162,7 +171,9 @@ export async function augmentTokenGroups(
     }
   }
 
-  const result = Array.from(map.values()).map((tokens) => tokens.filter((token) => token.surface_form.trim().length !== 0));
+  const result = Array.from(map.values()).map((tokens) =>
+    tokens.filter((token) => token.surface_form.trim().length !== 0)
+  );
   result.sort((a, b) => toLexicalKey(a).localeCompare(toLexicalKey(b)));
 
   return result;
