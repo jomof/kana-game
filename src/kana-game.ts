@@ -94,18 +94,19 @@ export function markTokens(
   // ——— Nested case ———
   if (tokens.length > 0 && Array.isArray(tokens[0])) {
     const groups = tokens as Token[][];
-    // 1) count how many are already marked in each subgroup
-    const markedCounts = groups.map((g) =>
-      g.reduce((n, t) => n + (t.marked ? 1 : 0), 0)
-    );
-    const maxCount = Math.max(...markedCounts);
-    // 2) only process those at maxCount
-    return groups.map((g, i) => {
-      if (markedCounts[i] === maxCount) {
-        // recurse into flat logic
+    // Get the groups that have the maximum number of currently marked tokens.
+    const candidateGroups = getGroupsWithMaxMarkedTokens(groups);
+
+    // Iterate through the original groups.
+    // If a group is a candidate (has max marked tokens), process it.
+    // Otherwise, skip marking for it.
+    return groups.map((g) => {
+      if (candidateGroups.includes(g)) {
+        // Recurse into flat logic for candidate groups.
+        // The 'as' cast is to satisfy the compiler for the specific overload.
         return markTokens(g, str) as {matched: number[] | null};
       } else {
-        // skip marking entirely
+        // Skip marking entirely for non-candidate groups.
         return {matched: null};
       }
     });
@@ -129,6 +130,28 @@ export function markTokens(
 }
 
 /**
+ * Filters an array of token groups, returning only those with the maximum
+ * number of marked tokens.
+ *
+ * @param groups An array of Token[] candidate sequences.
+ * @returns A new array containing only the groups that have the maximum
+ *          number of marked tokens. Returns an empty array if the input
+ *          `groups` is empty.
+ */
+export function getGroupsWithMaxMarkedTokens(groups: Token[][]): Token[][] {
+  if (groups.length === 0) {
+    return [];
+  }
+
+  const markedCounts = groups.map((g) =>
+    g.reduce((n, t) => n + (t.marked ? 1 : 0), 0)
+  );
+  const maxMarkedCount = Math.max(...markedCounts);
+
+  return groups.filter((_, i) => markedCounts[i] === maxMarkedCount);
+}
+
+/**
  * Returns true if any token was newly marked.
  */
 function anyMarked(result: {matched: number[] | null}[]): boolean {
@@ -144,25 +167,33 @@ function anyMarked(result: {matched: number[] | null}[]): boolean {
  * @param groups  An array of Token[] candidate sequences.
  * @returns       The best Token[] (or `null` if `groups` is empty).
  */
-function selectBestGroup(groups: Token[][]): Token[] {
+export function selectBestGroup(groups: Token[][]): Token[] {
   if (groups.length === 0) throw new Error('No groups provided');
 
-  let bestGroup = groups[0];
-  let bestMarked = bestGroup.filter((t) => t.marked).length;
-  let bestUnmarked = bestGroup.length - bestMarked;
+  // Get groups with the maximum number of marked tokens.
+  const groupsWithMaxMarked = getGroupsWithMaxMarkedTokens(groups);
 
-  for (let i = 1; i < groups.length; i++) {
-    const grp = groups[i];
-    const markedCount = grp.filter((t) => t.marked).length;
-    const unmarkedCount = grp.length - markedCount;
+  // If getGroupsWithMaxMarkedTokens returns an empty list, and groups was not empty,
+  // this indicates an issue. However, per its implementation, it should return
+  // a non-empty list if 'groups' is non-empty.
+  // The initial check for groups.length === 0 covers the case of empty input.
 
-    if (
-      markedCount > bestMarked ||
-      (markedCount === bestMarked && unmarkedCount < bestUnmarked)
-    ) {
-      bestGroup = grp;
-      bestMarked = markedCount;
-      bestUnmarked = unmarkedCount;
+  // If there's only one group with the max marked tokens, it's the best.
+  if (groupsWithMaxMarked.length === 1) {
+    return groupsWithMaxMarked[0];
+  }
+
+  // Apply tie-breaking: lowest number of unmarked tokens.
+  // All groups in groupsWithMaxMarked have the same (max) number of marked tokens.
+  // So, we pick the one with the minimum total tokens, which implies minimum unmarked.
+  let bestGroup = groupsWithMaxMarked[0];
+  let minTotalTokens = bestGroup.length;
+
+  for (let i = 1; i < groupsWithMaxMarked.length; i++) {
+    const currentGroup = groupsWithMaxMarked[i];
+    if (currentGroup.length < minTotalTokens) {
+      bestGroup = currentGroup;
+      minTotalTokens = currentGroup.length;
     }
   }
 
@@ -547,12 +578,13 @@ export class KanaGame extends LitElement {
   private _updateDebugFields() {
     if (!this.question) return;
 
-    // Take each token‐group (one per possible answer),
-    // turn every token’s katakana reading into hiragana,
-    // join them with spaces, and store in answerHiragana.
-    const groups = this.question.parsed as Token[][];
-    this.answerHiragana = groups.map((group) =>
-      group.map((token) => wanakana.toHiragana(token.reading)).join(' ')
+    const allGroups = this.question.parsed as Token[][];
+    // Filter groups to only those with the maximum number of marked tokens.
+    const groupsWithMaxMarked = getGroupsWithMaxMarkedTokens(allGroups);
+
+    // For debugging: the hiragana readings of these filtered answers.
+    this.answerHiragana = groupsWithMaxMarked.map((group) =>
+      group.map((token) => wanakana.toHiragana(token.reading!)).join(' ')
     );
   }
 

@@ -8,6 +8,11 @@ import {KanaGame, Token, markTokens, makeQuestion} from '../kana-game.js';
 import {fixture, assert} from '@open-wc/testing';
 import {html} from 'lit/static-html.js';
 import {tokenize} from '../tokenize.js';
+import {
+  getGroupsWithMaxMarkedTokens,
+  selectBestGroup,
+  Question,
+} from '../kana-game.js';
 
 /**
  * Helper function to create a fixture of the KanaGame element.
@@ -23,6 +28,26 @@ async function getElement(): Promise<KanaGame> {
   input.removeAttribute('data-previous-attributes');
   return el as KanaGame;
 }
+
+// Helper to create a simple token
+const makeToken = (
+  reading: string,
+  marked: boolean | undefined = false
+): Token => {
+  return {
+    surface_form: reading,
+    pos: '名詞',
+    pos_detail_1: '一般',
+    pos_detail_2: '*',
+    pos_detail_3: '*',
+    conjugated_type: '*',
+    conjugated_form: '*',
+    basic_form: reading,
+    reading: reading,
+    pronunciation: reading,
+    marked: marked,
+  } as Token;
+};
 
 function getExpectedHtml(): string {
   return `
@@ -435,6 +460,293 @@ suite('kana-game', () => {
     await sendInput(model, 'nipponnniikitainda');
     assert.equal(game.skeleton, '日本に行きたいんだ。');
     assert.equal(game.state, 'completed');
+  });
+
+  test('markTokens (nested) processes only groups selected by getGroupsWithMaxMarkedTokens logic', () => {
+    const g1Original = [makeToken('a', true), makeToken('b', false)];
+    const g2Original = [makeToken('c', false), makeToken('d', false)];
+    const g3Original = [makeToken('e', true), makeToken('f', true)];
+    const g4Original = [makeToken('g', true), makeToken('h', false)];
+
+    // Scenario 1: Target token not in the group with max marks
+    // Create fresh copies for each scenario to ensure test isolation
+    const allGroupsScen1: Token[][] = [
+      JSON.parse(JSON.stringify(g1Original)),
+      JSON.parse(JSON.stringify(g2Original)),
+      JSON.parse(JSON.stringify(g3Original)),
+      JSON.parse(JSON.stringify(g4Original)),
+    ];
+    // Ensure 'b' in the copy of g1 is unmarked for clarity, though makeToken defaults to false
+    allGroupsScen1[0][1].marked = false;
+
+    const results1 = markTokens(allGroupsScen1, 'b') as {
+      matched: number[] | null;
+    }[];
+    assert.strictEqual(
+      results1[0].matched,
+      null,
+      'g1 should not be processed (not max marked)'
+    );
+    assert.strictEqual(
+      results1[1].matched,
+      null,
+      'g2 should not be processed (not max marked)'
+    );
+    assert.strictEqual(
+      results1[2].matched,
+      null,
+      'g3 (max marked) does not contain "b"'
+    );
+    assert.strictEqual(
+      results1[3].matched,
+      null,
+      'g4 should not be processed (not max marked)'
+    );
+    assert.isFalse(
+      allGroupsScen1[0][1].marked,
+      'Token "b" in g1 should remain false'
+    );
+
+    // Scenario 2: Target token IS in the group with max marks
+    const allGroupsScen2: Token[][] = [
+      JSON.parse(JSON.stringify(g1Original)),
+      JSON.parse(JSON.stringify(g2Original)),
+      JSON.parse(JSON.stringify(g3Original)), // This will be the one to modify
+      JSON.parse(JSON.stringify(g4Original)),
+    ];
+    allGroupsScen2[2].push(makeToken('new', false)); // Add 'new' to the copy of g3 for this scenario
+
+    const results2 = markTokens(allGroupsScen2, 'new') as {
+      matched: number[] | null;
+    }[];
+    assert.strictEqual(
+      results2[0].matched,
+      null,
+      'g1 (scen2) should not be processed'
+    );
+    assert.strictEqual(
+      results2[1].matched,
+      null,
+      'g2 (scen2) should not be processed'
+    );
+    // g3 (index 2) is the one with max marks initially and contains 'new'
+    assert.deepEqual(
+      results2[2].matched,
+      [2],
+      'Mutated g3 should mark "new" at its new index 2'
+    );
+    assert.strictEqual(
+      results2[3].matched,
+      null,
+      'g4 (scen2) should not be processed'
+    );
+    assert.isTrue(
+      allGroupsScen2[2][2].marked,
+      'Token "new" in mutated g3 should now be true'
+    );
+  });
+});
+
+suite('_updateDebugFields (via supplyQuestion and answerHiragana)', () => {
+  test('answerHiragana reflects all groups if none are marked', async () => {
+    const model = await getModel();
+    const game = model.game;
+    const q = await makeQuestion('Q', ['こんにちは', 'さようなら']); // Creates 2 groups, 0 marked initially
+    // Manually ensure no tokens are marked to simulate pre-interaction state
+    q.parsed.forEach((group) =>
+      group.forEach((token) => (token.marked = false))
+    );
+
+    await game.supplyQuestion(q);
+    await game.updateComplete;
+
+    assert.deepEqual(game.answerHiragana, ['こんにちは', 'さようなら']);
+  });
+
+  test('answerHiragana reflects only groups with max marked tokens', async () => {
+    const model = await getModel();
+    const game = model.game;
+
+    // Create a question structure directly to control token details precisely
+    const q: Question = {
+      english: 'Q',
+      japanese: ['ab', 'cde', 'fg'],
+      parsed: [
+        [makeToken('ア', true), makeToken('ブ', false)], // group 0: 1 marked. Reading: ア ブ
+        [makeToken('カ', true), makeToken('デ', true), makeToken('エ', false)], // group 1: 2 marked. Reading: カ デ エ
+        [makeToken('フ', false), makeToken('ガ', false)], // group 2: 0 marked. Reading: フ ガ
+      ],
+    };
+    q.parsed[0][0].reading = 'ア';
+    q.parsed[0][1].reading = 'ブ';
+    q.parsed[1][0].reading = 'カ';
+    q.parsed[1][1].reading = 'デ';
+    q.parsed[1][2].reading = 'エ';
+    q.parsed[2][0].reading = 'フ';
+    q.parsed[2][1].reading = 'ガ';
+
+    await game.supplyQuestion(q);
+    await game.updateComplete;
+
+    // Expected: getGroupsWithMaxMarkedTokens returns only group 1 (2 marked)
+    // _updateDebugFields processes only group 1.
+    assert.deepEqual(game.answerHiragana, ['か で え']);
+  });
+});
+
+suite('selectBestGroup', () => {
+  test('throws error if no groups are provided', () => {
+    assert.throws(() => selectBestGroup([]), 'No groups provided');
+  });
+
+  test('selects the only group if only one is provided', () => {
+    const group1 = [makeToken('a', true)];
+    assert.deepEqual(selectBestGroup([group1]), group1);
+  });
+
+  test('selects group with more marked tokens', () => {
+    const group1 = [makeToken('a', true), makeToken('b', false)]; // 1 marked
+    const group2 = [makeToken('c', true), makeToken('d', true)]; // 2 marked
+    assert.deepEqual(selectBestGroup([group1, group2]), group2);
+  });
+
+  test('tie-breaking: selects group with fewer unmarked (total) tokens when marked counts are equal', () => {
+    // Both groups will have 1 marked token after getGroupsWithMaxMarkedTokens
+    const group1 = [
+      makeToken('a', true),
+      makeToken('b', false),
+      makeToken('extra', false),
+    ]; // 1 marked, 3 total
+    const group2 = [makeToken('c', true), makeToken('d', false)]; // 1 marked, 2 total
+    const group3 = [makeToken('e', false), makeToken('f', false)]; // 0 marked (will be filtered out)
+    assert.deepEqual(selectBestGroup([group1, group2, group3]), group2);
+  });
+
+  test('tie-breaking: multiple groups with same max marked and same min length (picks first)', () => {
+    const group1 = [makeToken('a', true), makeToken('b', false)]; // 1 marked, 2 total
+    const group2 = [makeToken('c', true), makeToken('d', false)]; // 1 marked, 2 total
+    // Expected: selectBestGroup will pick group1 as it's the first one encountered.
+    assert.deepEqual(selectBestGroup([group1, group2]), group1);
+  });
+
+  test('all tokens unmarked, picks the shortest group', () => {
+    const group1 = [
+      makeToken('a', false),
+      makeToken('b', false),
+      makeToken('c', false),
+    ]; // 0 marked, 3 total
+    const group2 = [makeToken('d', false), makeToken('e', false)]; // 0 marked, 2 total
+    // Both have 0 marked. getGroupsWithMaxMarkedTokens will return both.
+    // Tie-breaker should pick group2 (shorter).
+    assert.deepEqual(selectBestGroup([group1, group2]), group2);
+  });
+
+  test('complex scenario: filtering and tie-breaking', () => {
+    const groupA = [
+      makeToken('a', true),
+      makeToken('b', true),
+      makeToken('c', false),
+    ]; // 2 marked, 3 total
+    const groupB = [
+      makeToken('x', true),
+      makeToken('y', false),
+      makeToken('z', false),
+    ]; // 1 marked, 3 total (filtered out)
+    const groupC = [
+      makeToken('p', true),
+      makeToken('q', true),
+      makeToken('r', false),
+      makeToken('s', false),
+    ]; // 2 marked, 4 total
+    const groupD = [makeToken('d', true), makeToken('e', true)]; // 2 marked, 2 total
+    // After getGroupsWithMaxMarkedTokens: groupA, groupC, groupD remain (all 2 marked)
+    // Tie-breaking: groupD is shortest (2 tokens)
+    assert.deepEqual(selectBestGroup([groupA, groupB, groupC, groupD]), groupD);
+  });
+
+  test('groups with no marked tokens, different lengths', () => {
+    const group1 = [makeToken('a', false), makeToken('b', false)]; // 0 marked, 2 total
+    const group2 = [makeToken('c', false)]; // 0 marked, 1 total
+    const group3 = [
+      makeToken('d', false),
+      makeToken('e', false),
+      makeToken('f', false),
+    ]; // 0 marked, 3 total
+    // All have 0 marked, getGroupsWithMaxMarkedTokens returns all.
+    // selectBestGroup should pick group2 (shortest).
+    assert.deepEqual(selectBestGroup([group1, group2, group3]), group2);
+  });
+});
+
+suite('getGroupsWithMaxMarkedTokens', () => {
+  test('handles an empty array of groups', () => {
+    const groups: Token[][] = [];
+    assert.deepEqual(getGroupsWithMaxMarkedTokens(groups), []);
+  });
+
+  test('handles groups with no marked tokens', () => {
+    const groups: Token[][] = [
+      [makeToken('a', false), makeToken('b', false)],
+      [makeToken('c', false)],
+    ];
+    // All groups have 0 marked tokens, so all should be returned.
+    assert.deepEqual(getGroupsWithMaxMarkedTokens(groups), groups);
+  });
+
+  test('handles groups with varying numbers of marked tokens', () => {
+    const group1 = [makeToken('a', true), makeToken('b', false)]; // 1 marked
+    const group2 = [makeToken('c', true), makeToken('d', true)]; // 2 marked
+    const group3 = [makeToken('e', false), makeToken('f', false)]; // 0 marked
+    const groups: Token[][] = [group1, group2, group3];
+    // Only group2 has the max (2) marked tokens.
+    assert.deepEqual(getGroupsWithMaxMarkedTokens(groups), [group2]);
+  });
+
+  test('handles groups where all have the same number of marked tokens', () => {
+    const group1 = [makeToken('a', true), makeToken('b', false)]; // 1 marked
+    const group2 = [makeToken('c', false), makeToken('d', true)]; // 1 marked
+    const groups: Token[][] = [group1, group2];
+    // Both groups have 1 marked token.
+    assert.deepEqual(getGroupsWithMaxMarkedTokens(groups), groups);
+  });
+
+  test('handles groups with tokens marked undefined or false', () => {
+    const group1 = [makeToken('a', true), makeToken('b', undefined)]; // 1 marked
+    const group2 = [makeToken('c', false), makeToken('d', false)]; // 0 marked
+    const group3 = [makeToken('e', undefined), makeToken('f', true)]; // 1 marked
+    const groups: Token[][] = [group1, group2, group3];
+    // group1 and group3 both have 1 marked token.
+    assert.deepEqual(getGroupsWithMaxMarkedTokens(groups), [group1, group3]);
+  });
+
+  test('single group with some marked tokens', () => {
+    const group1 = [
+      makeToken('a', true),
+      makeToken('b', false),
+      makeToken('c', true),
+    ]; // 2 marked
+    const groups: Token[][] = [group1];
+    assert.deepEqual(getGroupsWithMaxMarkedTokens(groups), [group1]);
+  });
+
+  test('multiple groups, one has clearly more marked tokens', () => {
+    const group1 = [makeToken('a', true)]; // 1 marked
+    const group2 = [makeToken('b', true), makeToken('c', true)]; // 2 marked
+    const groups: Token[][] = [group1, group2];
+    assert.deepEqual(getGroupsWithMaxMarkedTokens(groups), [group2]);
+  });
+
+  test('multiple groups, including one empty group', () => {
+    const group1: Token[] = []; // 0 marked
+    const group2 = [makeToken('a', true)]; // 1 marked
+    const group3 = [makeToken('b', false)]; // 0 marked
+    const groups: Token[][] = [group1, group2, group3];
+    assert.deepEqual(getGroupsWithMaxMarkedTokens(groups), [group2]);
+  });
+
+  test('all groups are empty', () => {
+    const groups: Token[][] = [[], []];
+    assert.deepEqual(getGroupsWithMaxMarkedTokens(groups), [[], []]);
   });
 });
 
