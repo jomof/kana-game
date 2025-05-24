@@ -1,159 +1,31 @@
 /**
  * @license
- * Copyright 2019 Jomo Fisher
+ * Copyright 2025 Jomo Fisher
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {LitElement, PropertyValues, html, css} from 'lit';
-import {customElement, property, query} from 'lit/decorators.js';
+import { LitElement, PropertyValues, html, css } from 'lit';
+import { customElement, property, query } from 'lit/decorators.js';
 import * as wanakana from 'wanakana';
 import * as kuromoji from '@patdx/kuromoji';
+import { tokenize } from './tokenize.js';
+import { augmentTokenGroups } from '../augment';
 
-const loader: kuromoji.LoaderConfig = {
-  async loadArrayBuffer(url: string): Promise<ArrayBufferLike> {
-    url = url.replace(/\.gz$/, '');
-    const res = await fetch(
-      'https://cdn.jsdelivr.net/npm/@aiktb/kuromoji@1.0.2/dict/' + url
-    );
-    if (!res.ok) {
-      throw new Error(`Failed to fetch ${url}: ${res.status}`);
-    }
-    return res.arrayBuffer();
-  },
-};
-
-const tokenizerPromise = new kuromoji.TokenizerBuilder({loader}).build();
-
-export function tokenize(text: string): Promise<Token[]> {
-  return tokenizerPromise.then(
-    (tokenizer) => tokenizer.tokenize(text) as Token[]
-  );
+export interface Token extends kuromoji.IpadicFeatures {
+  marked: boolean | undefined;
 }
 
-type TokenAugmenter = (tokens: Token[]) => Promise<Token[][]>;
-
-/**
- * Creates a TokenAugmenter by:
- *  – checking `guard(tokens)`
- *  – joining tokens → raw string
- *  – running replacer(raw) → [variant1, variant2…]
- *  – tokenizing each variant → Token[]
- */
-function makeTokenAugmenter(
-  guard: (tokens: Token[]) => boolean,
-  replacer: (raw: string) => string[]
-): TokenAugmenter {
-  return async (tokens) => {
-    if (!guard(tokens)) return [];
-    const raw = tokens.map((t) => t.surface_form).join(' ');
-    const variants = replacer(raw);
-    const out: Token[][] = [];
-    for (const text of variants) {
-      const toks = await tokenize(text);
-      out.push(toks.filter((t) => t.surface_form !== ' '));
-    }
-    return out;
-  };
-}
-
-const augmentWatashiTokens = makeTokenAugmenter(
-  (tokens) => tokens.some((t) => t.surface_form === '私'),
-  (raw) => [raw.replace(/私/g, '僕')]
-);
-
-const augmentBokuTokens = makeTokenAugmenter(
-  (tokens) => tokens.some((t) => t.surface_form === '僕'),
-  (raw) => [raw.replace(/僕/g, '俺')]
-);
-
-const augmentAnataTokens = makeTokenAugmenter(
-  (tokens) => tokens.some((t) => t.surface_form === 'あなた'),
-  (raw) => [raw.replace(/あなた/g, '君')]
-);
-
-const augmentAtashiTokens = makeTokenAugmenter(
-  (tokens) => tokens.some((t) => t.surface_form === '私'),
-  (raw) => [raw.replace(/私/g, 'あたし')]
-);
-
-const augmentDesuDaTokens = makeTokenAugmenter(
-  (tokens) => {
-    const n = tokens.length;
-    if (n < 2) return false;
-    const pen = tokens[n - 2],
-      last = tokens[n - 1];
-    return (
-      pen.surface_form === 'です' &&
-      pen.pos === '助動詞' &&
-      pen.conjugated_form === '基本形' &&
-      last.surface_form === '。' &&
-      last.pos === '記号'
+export async function makeQuestion(
+  english: string,
+  japanese: string[]) : Promise<Question> {
+    const groups = await Promise.all(
+      japanese.map(async (it) => await tokenize(it))
     );
-  },
-  (raw) => {
-    const stem = raw.slice(0, -' です。'.length);
-    return [stem + 'だ。'];
-  }
-);
-
-const augmentDropWatashiHa = makeTokenAugmenter(
-  // Guard: first two tokens are 私 + は, and there’s at least one more token
-  (tokens) =>
-    tokens.length > 2 &&
-    tokens[0].surface_form === '私' &&
-    tokens[1].surface_form === 'は' &&
-    // ensure next token isn’t another particle (so we won’t start with は)
-    tokens[2].pos !== '助詞',
-
-  // Replacer: lexically cut off the leading “私は”
-  (raw) => {
-    const dropped = raw.trim().slice('私 は'.length);
-    return [dropped.trim()];
-  }
-);
-
-const tokenAugmenters: TokenAugmenter[] = [
-  augmentWatashiTokens,
-  augmentBokuTokens,
-  augmentAnataTokens,
-  augmentAtashiTokens,
-  augmentDesuDaTokens,
-  augmentDropWatashiHa,
-];
-
-async function augmentTokenGroups(
-  initialGroups: Token[][]
-): Promise<Token[][]> {
-  // map rawSurface → tokens, to dedupe
-  const map = new Map<string, Token[]>();
-  // a queue of groups we still need to process
-  const queue: Token[][] = [];
-
-  // seed with the originals
-  for (const grp of initialGroups) {
-    const raw = grp.map((t) => t.surface_form).join('');
-    if (!map.has(raw)) {
-      map.set(raw, grp);
-      queue.push(grp);
-    }
-  }
-
-  // process until no new groups are produced
-  while (queue.length > 0) {
-    const grp = queue.shift()!;
-    for (const plugin of tokenAugmenters) {
-      const results = await plugin(grp);
-      for (const newGrp of results) {
-        const raw = newGrp.map((t) => t.surface_form).join('');
-        if (!map.has(raw)) {
-          map.set(raw, newGrp);
-          queue.push(newGrp);
-        }
-      }
-    }
-  }
-
-  return Array.from(map.values());
+    const parsed = (await augmentTokenGroups(groups)).map ((it) => it as Token[]);
+    return {
+      english: english,
+      parsed: parsed
+    } as Question;
 }
 
 export interface Question {
@@ -505,24 +377,13 @@ export class KanaGame extends LitElement {
    * Called to supply a new question to the game.
    * @param question
    */
-  async supplyQuestion(question: Question) {
-    const tokenizer = await tokenizerPromise;
-    const origGroups = await Promise.all(
-      question.japanese.map(
-        async (it) =>
-          (
-            await tokenizer.tokenize(it)
-          ).filter((t) => t.surface_form !== ' ') as Token[]
-      )
-    );
-
-    const allGroups = await augmentTokenGroups(origGroups);
-
+ async supplyQuestion(question: Question) {
+    const allGroups = question.parsed;
     this.question = structuredClone(question);
-    this.question.parsed = allGroups;
     this.parsedEnglish = this._parseEnglishString(question.english);
     this._furiganaVisibility = new Array(this.parsedEnglish.length).fill(false);
     const best = selectBestGroup(allGroups)!;
+    console.log('supplyQuestion', formatTokenGroup(best, false));
     this.skeleton = formatTokenGroup(best, false);
     this.state = 'normal';
     this.kana.value = '';
@@ -535,12 +396,6 @@ export class KanaGame extends LitElement {
       wanakana.bind(this.kana, {IMEMode: true});
       this.kana.focus();
     }
-  }
-
-  override connectedCallback() {
-    super.connectedCallback();
-    // fire & forget: warm up the tokenizer
-    tokenizerPromise.catch((e) => console.error('tokenizer failed to load', e));
   }
 
   protected override updated(changed: PropertyValues) {
@@ -658,6 +513,7 @@ export class KanaGame extends LitElement {
       this.state = 'normal';
     }
 
+    console.log('handleKeydown', formatTokenGroup(best!, showPunctuation));
     this.skeleton = formatTokenGroup(best!, showPunctuation);
   }
 

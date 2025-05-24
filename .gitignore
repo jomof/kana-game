@@ -8,6 +8,14 @@ kana-game.js
 kana-game.js.map
 kana-game.d.ts
 kana-game.d.ts.map
+augment.js
+augment.js.map
+augment.d.ts
+augment.d.ts.map
+tokenize.js
+tokenize.js.map
+tokenize.d.ts
+tokenize.d.ts.map
 # only generated for size check
 kana-game.bundled.js
 jomof-kana-game-*.tgz

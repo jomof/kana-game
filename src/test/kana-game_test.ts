@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import {KanaGame, Token, markTokens, Question, tokenize} from '../kana-game.js';
+import {KanaGame, Token, markTokens, makeQuestion} from '../kana-game.js';
 import {fixture, assert} from '@open-wc/testing';
 import {html} from 'lit/static-html.js';
+import {tokenize} from '../tokenize.js';
 
 /**
  * Helper function to create a fixture of the KanaGame element.
@@ -153,11 +154,11 @@ suite('kana-game', () => {
   test('check supplyQuestion', async () => {
     const model = await getModel();
     const game = model.game;
-    await game.supplyQuestion({
-      english: 'I am a teacher.',
-      japanese: ['先生です。', '先生だ。'],
-      parsed: [],
-    });
+
+    await game.supplyQuestion(await makeQuestion(
+      'I am a teacher.',
+      ['先生です。', '先生だ。']
+    ));
     await game.updateComplete;
     assert.deepEqual(game.parsedEnglish, [
       {englishWord: 'I', furigana: ''},
@@ -175,7 +176,7 @@ suite('kana-game', () => {
   });
 
   test('mark tokens 1', async () => {
-    const tokens = await tokenize('私は学生です。');
+    const tokens = await tokenize('私は学生です。') as Token[];
     const result = markTokens(tokens, 'ワタシハガクセイデス');
     assert.deepEqual(result.matched, [0, 1, 2, 3]);
     assert.isTrue(tokens[0].marked);
@@ -186,7 +187,7 @@ suite('kana-game', () => {
   });
 
   test('mark tokens 2', async () => {
-    const tokens = await tokenize('私は学生です。');
+    const tokens = await tokenize('私は学生です。') as Token[];
     markTokens(tokens, 'ワタシ');
     markTokens(tokens, 'ハ');
     markTokens(tokens, 'ガクセイ');
@@ -199,7 +200,7 @@ suite('kana-game', () => {
   });
 
   test('mark tokens 3', async () => {
-    const tokens = [await tokenize('私は学生です。')];
+    const tokens = [await tokenize('私は学生です。') as Token[]];
     assert.deepEqual(markTokens(tokens, 'ワタシハ')[0].matched, [0, 1]);
     assert.deepEqual(markTokens(tokens, 'ハガクセイ')[0].matched, [2]);
     assert.deepEqual(markTokens(tokens, 'ガクセイデス')[0].matched, [3]);
@@ -213,8 +214,8 @@ suite('kana-game', () => {
 
   test('mark tokens 3.1', async () => {
     const tokens = [
-      await tokenize('私は学生です。'),
-      await tokenize('私は学生だ。'),
+      await tokenize('私は学生です。') as Token[],
+      await tokenize('私は学生だ。') as Token[],
     ];
     const desuMarked = markTokens(tokens, 'デス');
 
@@ -228,7 +229,7 @@ suite('kana-game', () => {
   });
 
   test('mark tokens 4', async () => {
-    const tokens = await tokenize('私は学生です。');
+    const tokens = await tokenize('私は学生です。') as Token[];
     assert.isNull(markTokens(tokens, 'ガ').matched);
     assert.deepEqual(markTokens(tokens, 'ハ').matched, [1]);
     assert.deepEqual(markTokens(tokens, 'ガクセイデス').matched, [2, 3]);
@@ -363,10 +364,10 @@ suite('kana-game', () => {
   test('run to correct completion', async () => {
     const model = await getModel();
     const game = model.game;
-    await game.supplyQuestion({
-      english: 'I am a student.',
-      japanese: ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
-    } as Question);
+    await game.supplyQuestion(await makeQuestion(
+      'I am a student.',
+      ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
+    ));
     await game.updateComplete;
     assert.deepEqual(game.parsedEnglish, [
       {englishWord: 'I', furigana: ''},
@@ -386,10 +387,10 @@ suite('kana-game', () => {
   test('run to error then return to normal', async () => {
     const model = await getModel();
     const game = model.game;
-    await game.supplyQuestion({
-      english: 'I am a student.',
-      japanese: ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。'],
-    } as Question);
+    await game.supplyQuestion(await makeQuestion(
+      'I am a student.',
+      ['私は学生です。', '私は学生だ。', '学生です。', '学生だ。']
+    ));
     await game.updateComplete;
     assert.equal(game.skeleton, '____');
     await sendInput(model, 'ni'); // incorrect input
@@ -400,13 +401,21 @@ suite('kana-game', () => {
     assert.equal(game.skeleton, '____');
   });
 
+  test('make question', async () => {
+    const question = await makeQuestion(
+      'I am reading a book right now.',
+      ['今 本 を読んでいる。']
+    );
+    console.log('question', JSON.stringify(question, null, 2));
+  });
+
   test('test book', async () => {
     const model = await getModel();
     const game = model.game;
-    await game.supplyQuestion({
-      english: 'I am reading a book right now.',
-      japanese: ['今 本 を読んでいる。'],
-    } as Question);
+    await game.supplyQuestion(await makeQuestion(
+      'I am reading a book right now.',
+      ['今 本 を読んでいる。'],
+    ));
     await game.updateComplete;
     assert.equal(game.skeleton, '________');
     await sendInput(model, 'imahonwoyondeiru'); // incorrect input
@@ -417,10 +426,10 @@ suite('kana-game', () => {
   test('watashi drop', async () => {
     const model = await getModel();
     const game = model.game;
-    await game.supplyQuestion({
-      english: 'I want to go to Japan.',
-      japanese: ['私は日本に行きたいんです。'],
-    } as Question);
+    await game.supplyQuestion(await makeQuestion(
+      'I want to go to Japan.',
+      ['私は日本に行きたいんです。']
+    ));
     await game.updateComplete;
     await sendInput(model, 'nipponnniikitainda');
     assert.equal(game.skeleton, '日本に行きたいんだ。');
@@ -432,11 +441,10 @@ suite('Furigana Display', () => {
   test('Test English String Parsing', async () => {
     const model = await getModel();
     const game = model.game;
-    await game.supplyQuestion({
-      english: 'Hello [こんにちは] World [せかい] Test',
-      japanese: [' irrelevant '],
-      parsed: [],
-    });
+    await game.supplyQuestion(await makeQuestion(
+      'Hello [こんにちは] World [せかい] Test',
+      [],
+    ));
     await game.updateComplete;
     assert.deepEqual(game.parsedEnglish, [
       {englishWord: 'Hello', furigana: 'こんにちは'},
