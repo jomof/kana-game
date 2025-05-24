@@ -53,7 +53,7 @@
     "test:dev": "wtr",
     "test:watch": "wtr --watch",
     "test:prod": "MODE=prod wtr",
-    "test:unit": "node --no-warnings --loader ts-node/esm node_modules/mocha/bin/mocha.js src/test/**/*_jest_test.ts",
+    "test:unit": "mocha --no-warnings",
     "test:prod:watch": "MODE=prod wtr --watch",
     "checksize": "rollup -c ; cat kana-game.bundled.js | gzip -9 | wc -c ; rm kana-game.bundled.js"
   },

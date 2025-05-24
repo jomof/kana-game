@@ -1,5 +1,0 @@
-export default {
-  loader: 'ts-node/esm',
-  extension: ['ts'],
-  spec: ['src/test/**/*_mocha_test.ts'],
-};
