@@ -62,21 +62,29 @@ async function augmentDesuDaTokens(
   tokens: IpadicFeatures[]
 ): Promise<IpadicFeatures[][]> {
   const desuIndex = tokens.findIndex((t) => t.surface_form === 'です');
-  if (
-    desuIndex === tokens.length - 1 ||
-    (desuIndex === tokens.length - 2 &&
-      tokens[tokens.length - 1].pos === '記号')
-  ) {
-    const replacement = tokens
-      .map((t, i) => {
-        if (i === desuIndex) return 'だ';
-        return t.surface_form;
-      })
-      .join(' ');
-    const replacementTokens = await tokenize(replacement);
-    return Promise.resolve([replacementTokens]);
+  
+  if (desuIndex !== tokens.length - 1 &&
+     (desuIndex !== tokens.length - 2 ||
+      (tokens[tokens.length - 1].pos !== '記号' &&
+      tokens[tokens.length - 1].pos !== '名詞'))) {
+    
+    return Promise.resolve([]);
   }
-  return Promise.resolve([]);
+  if (desuIndex > 0) {
+    const prior = tokens[desuIndex - 1];
+    if (prior.pos !== '名詞') {
+      return Promise.resolve([]);
+    }
+  }
+  
+  const replacement = tokens
+    .map((t, i) => {
+      if (i === desuIndex) return 'だ';
+      return t.surface_form;
+    })
+    .join(' ');
+  const replacementTokens = await tokenize(replacement);
+  return Promise.resolve([replacementTokens]);
 }
 
 const augmentDropWatashiHa = makeTokenAugmenter(

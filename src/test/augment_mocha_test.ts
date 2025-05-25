@@ -43,12 +43,20 @@ describe('augment', () => {
     ]);
   });
 
-  it('empty', async () => {
+  it('empty sentence', async () => {
     const tokenGroups = await tokenizeAll(['']);
     const augmented = (await augmentTokenGroups(tokenGroups)).map(
       tokensToString
     );
     assert.deepEqual(augmented, ['']);
+  });
+
+  it('empty list', async () => {
+    const tokenGroups = await tokenizeAll([]);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, []);
   });
 
   it('second word は', async () => {
@@ -95,35 +103,35 @@ describe('augment', () => {
   });
 
   it('desu -> da', async () => {
-    const tokenGroups = await tokenizeAll(['彼の犬はとてもかわいいです']);
+    const tokenGroups = await tokenizeAll(['彼の犬は静かです']);
     const augmented = (await augmentTokenGroups(tokenGroups)).map(
       tokensToString
     );
     assert.deepEqual(augmented, [
-      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|とても(トテモ)|かわいい(カワイイ)|だ(ダ)',
-      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|とても(トテモ)|かわいい(カワイイ)|です(デス)',
+      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|だ(ダ)",
+      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|です(デス)"
     ]);
   });
 
   it('desu。 -> da。', async () => {
-    const tokenGroups = await tokenizeAll(['彼の犬はとてもかわいいです。']);
+    const tokenGroups = await tokenizeAll(['彼の犬は静かです。']);
     const augmented = (await augmentTokenGroups(tokenGroups)).map(
       tokensToString
     );
     assert.deepEqual(augmented, [
-      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|とても(トテモ)|かわいい(カワイイ)|だ(ダ)|。(。)',
-      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|とても(トテモ)|かわいい(カワイイ)|です(デス)|。(。)',
+      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|だ(ダ)|。(。)",
+      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|です(デス)|。(。)"
     ]);
   });
 
   it('desu. -> da.', async () => {
-    const tokenGroups = await tokenizeAll(['彼の犬はとてもかわいいです。']);
+    const tokenGroups = await tokenizeAll(['彼の犬は静かです.']);
     const augmented = (await augmentTokenGroups(tokenGroups)).map(
       tokensToString
     );
     assert.deepEqual(augmented, [
-      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|とても(トテモ)|かわいい(カワイイ)|だ(ダ)|。(。)',
-      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|とても(トテモ)|かわいい(カワイイ)|です(デス)|。(。)',
+      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|だ(ダ)|.(undefined)",
+      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|です(デス)|.(undefined)"
     ]);
   });
 
@@ -134,4 +142,70 @@ describe('augment', () => {
     );
     assert.deepEqual(augmented, ['難しい(ムズカシイ)|です(デス)']);
   });
+
+  it('da before ka is ungrammatical', async () => {
+    const tokenGroups = await tokenizeAll(['これはペンですか？']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, ["これ(コレ)|は(ハ)|ペン(ペン)|です(デス)|か(カ)|？(？)"]);
+  });
+
+  it('da after 行きたい is ungrammatical', async () => {
+    const tokenGroups = await tokenizeAll(['行きたいです。']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, ["行き(イキ)|たい(タイ)|です(デス)|。(。)"]);
+  });
+
+  it('desu after noun -> da', async () => {
+    const tokenGroups = await tokenizeAll(['猫です。']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, [
+      '猫(ネコ)|だ(ダ)|。(。)', "猫(ネコ)|です(デス)|。(。)"]);
+  });
+
+  it('desu after na-adjective -> da', async () => {
+    const tokenGroups = await tokenizeAll(['有名です']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, [
+      "有名(ユウメイ)|だ(ダ)",
+      "有名(ユウメイ)|です(デス)"]);
+  });
+
+  it('desu alone', async () => {
+    const tokenGroups = await tokenizeAll(['です']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, [
+      "だ(ダ)",
+      "です(デス)"]);
+  });
+
+  it('今 本 as "now book"', async () => {
+    const tokenGroups = await tokenizeAll(['今 本 です。']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, [
+      "今(イマ)|本(ホン)|だ(ダ)|。(。)",
+      "今(イマ)|本(ホン)|です(デス)|。(。)"]);
+  });
+
+  it('今 本 as "imamoto" (name)', async () => {
+    const tokenGroups = await tokenizeAll(['今本です。']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, [
+      "今本(イマモト)|だ(ダ)|。(。)",
+      "今本(イマモト)|です(デス)|。(。)"]);
+  });
+
 });
