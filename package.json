@@ -55,6 +55,7 @@
     "test:prod": "MODE=prod wtr",
     "test:unit": "mocha --no-warnings",
     "test:prod:watch": "MODE=prod wtr --watch",
+    "test:mutation": "FORCE_COLOR=1 stryker run | tee stryker.log",
     "checksize": "rollup -c ; cat kana-game.bundled.js | gzip -9 | wc -c ; rm kana-game.bundled.js"
   },
   "keywords": [
@@ -80,6 +81,9 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-replace": "^5.0.7",
     "@rollup/plugin-terser": "^0.4.4",
+    "@stryker-mutator/core": "^9.0.1",
+    "@stryker-mutator/mocha-runner": "^9.0.1",
+    "@stryker-mutator/typescript-checker": "^9.0.1",
     "@types/assert": "^1.5.11",
     "@typescript-eslint/eslint-plugin": "^5.25.0",
     "@typescript-eslint/parser": "^5.25.0",
