@@ -208,4 +208,67 @@ describe('augment', () => {
       "今本(イマモト)|です(デス)|。(。)"]);
   });
 
+  it('desu followed by adverb should not become da', async () => {
+    const tokenGroups = await tokenizeAll(['静かによくです']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, ['静か(シズカ)|に(ニ)|よく(ヨク)|です(デス)']);
+  });
+
+  it('desu followed by incompatible particle sura should not become da', async () => {
+    const tokenGroups = await tokenizeAll(['ペンですら']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, ['ペン(ペン)|で(デ)|すら(スラ)']);
+  });
+
+  it('desu followed by particle to should not become da', async () => {
+    const tokenGroups = await tokenizeAll(['彼が犯人ですと皆が言った']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented, ['彼(カレ)|が(ガ)|犯人(ハンニン)|です(デス)|と(ト)|皆(ミナ)|が(ガ)|言っ(イッ)|た(タ)']);
+  });
+
+  it('augmentDropWatashiHa should not drop watashi if not followed by ha', async () => {
+    const tokenGroups = await tokenizeAll(['私が本を読みます']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(
+      tokensToString
+    );
+    assert.deepEqual(augmented.sort(), [
+      'あたし(アタシ)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+      '俺(オレ)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+      '僕(ボク)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+      '本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)', // This is the result of "私 は" being (incorrectly) sliced from "私 が 本..."
+      '私(ワタシ)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+    ].sort());
+  });
+
+  it('augmentDropWatashiHa should correctly handle full-width space after watashi before ha', async () => {
+    const tokenGroups = await tokenizeAll(['私　は本を読みます']); // U+3000 full-width space
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(tokensToString).sort();
+
+    assert.deepEqual(augmented.sort(), [
+      'あたし(アタシ)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+      '俺(オレ)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+      '僕(ボク)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+      '本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)', // Correctly dropped "私 は"
+      '私(ワタシ)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)', // Original, with space normalized
+    ].sort());
+  });
+
+  it('pronoun replacement should not affect words containing the same character', async () => {
+    const tokenGroups = await tokenizeAll(['私は私立の学校に行きます']);
+    const augmented = (await augmentTokenGroups(tokenGroups)).map(tokensToString).sort();
+
+    assert.deepEqual(augmented.sort(), [
+      "あたし(アタシ)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)",
+      "俺(オレ)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)",
+      "僕(ボク)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)",
+      "私(ワタシ)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)",
+      "私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)"
+    ].sort());
+  });
 });

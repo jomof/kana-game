@@ -33,30 +33,8 @@ function makeTokenAugmenter(
   };
 }
 
-const augmentWatashiTokens = makeTokenAugmenter(
-  (_) => true,
-  (raw) => [raw.replace(/私/g, '僕')]
-);
 
-const augmentBokuTokens = makeTokenAugmenter(
-  (_) => true,
-  (raw) => [raw.replace(/僕/g, '俺')]
-);
 
-const augmentAnataTokens = makeTokenAugmenter(
-  (_) => true,
-  (raw) => [raw.replace(/あなた/g, '君')]
-);
-
-const augmentKimiTokens = makeTokenAugmenter(
-  (_) => true,
-  (raw) => [raw.replace(/君/g, 'あなた')]
-);
-
-const augmentAtashiTokens = makeTokenAugmenter(
-  (_) => true,
-  (raw) => [raw.replace(/私/g, 'あたし')]
-);
 
 async function augmentDesuDaTokens(
   tokens: IpadicFeatures[]
@@ -85,6 +63,27 @@ async function augmentDesuDaTokens(
     .join(' ');
   const replacementTokens = await tokenize(replacement);
   return Promise.resolve([replacementTokens]);
+}
+
+function makeReplaceWholeToken(
+  search: string,
+  replacement: string
+): TokenAugmenter {
+  async function replace(tokens: IpadicFeatures[]) {
+    const result = []
+    let changed = false;
+    for (const token of tokens) {
+      if (token.surface_form === search) {
+        changed = true;
+        result.push(replacement);
+      } else {
+        result.push(token.surface_form);
+      }
+    }
+    if (!changed) return Promise.resolve([]);
+    return Promise.resolve([await tokenize(result.join(' '))]);
+  };
+  return replace
 }
 
 const augmentDropWatashiHa = makeTokenAugmenter(
@@ -117,11 +116,11 @@ export function makeReadingModifierAugmenter(
 }
 
 const tokenAugmenters: TokenAugmenter[] = [
-  augmentWatashiTokens,
-  augmentBokuTokens,
-  augmentAnataTokens,
-  augmentKimiTokens,
-  augmentAtashiTokens,
+  makeReplaceWholeToken('私', '僕'),
+  makeReplaceWholeToken('僕', '俺'),
+  makeReplaceWholeToken('あなた', '君'),
+  makeReplaceWholeToken('君', 'あなた'),
+  makeReplaceWholeToken('私', 'あたし'),
   augmentDesuDaTokens,
   augmentDropWatashiHa,
   makeReadingModifierAugmenter('日本', 'ニホン'),
