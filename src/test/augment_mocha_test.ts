@@ -108,8 +108,8 @@ describe('augment', () => {
       tokensToString
     );
     assert.deepEqual(augmented, [
-      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|だ(ダ)",
-      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|です(デス)"
+      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|だ(ダ)',
+      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|です(デス)',
     ]);
   });
 
@@ -119,8 +119,8 @@ describe('augment', () => {
       tokensToString
     );
     assert.deepEqual(augmented, [
-      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|だ(ダ)|。(。)",
-      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|です(デス)|。(。)"
+      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|だ(ダ)|。(。)',
+      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|です(デス)|。(。)',
     ]);
   });
 
@@ -130,8 +130,8 @@ describe('augment', () => {
       tokensToString
     );
     assert.deepEqual(augmented, [
-      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|だ(ダ)|.(undefined)",
-      "彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|です(デス)|.(undefined)"
+      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|だ(ダ)|.(undefined)',
+      '彼(カレ)|の(ノ)|犬(イヌ)|は(ハ)|静か(シズカ)|です(デス)|.(undefined)',
     ]);
   });
 
@@ -148,7 +148,9 @@ describe('augment', () => {
     const augmented = (await augmentTokenGroups(tokenGroups)).map(
       tokensToString
     );
-    assert.deepEqual(augmented, ["これ(コレ)|は(ハ)|ペン(ペン)|です(デス)|か(カ)|？(？)"]);
+    assert.deepEqual(augmented, [
+      'これ(コレ)|は(ハ)|ペン(ペン)|です(デス)|か(カ)|？(？)',
+    ]);
   });
 
   it('da after 行きたい is ungrammatical', async () => {
@@ -156,7 +158,7 @@ describe('augment', () => {
     const augmented = (await augmentTokenGroups(tokenGroups)).map(
       tokensToString
     );
-    assert.deepEqual(augmented, ["行き(イキ)|たい(タイ)|です(デス)|。(。)"]);
+    assert.deepEqual(augmented, ['行き(イキ)|たい(タイ)|です(デス)|。(。)']);
   });
 
   it('desu after noun -> da', async () => {
@@ -165,7 +167,9 @@ describe('augment', () => {
       tokensToString
     );
     assert.deepEqual(augmented, [
-      '猫(ネコ)|だ(ダ)|。(。)', "猫(ネコ)|です(デス)|。(。)"]);
+      '猫(ネコ)|だ(ダ)|。(。)',
+      '猫(ネコ)|です(デス)|。(。)',
+    ]);
   });
 
   it('desu after na-adjective -> da', async () => {
@@ -174,8 +178,9 @@ describe('augment', () => {
       tokensToString
     );
     assert.deepEqual(augmented, [
-      "有名(ユウメイ)|だ(ダ)",
-      "有名(ユウメイ)|です(デス)"]);
+      '有名(ユウメイ)|だ(ダ)',
+      '有名(ユウメイ)|です(デス)',
+    ]);
   });
 
   it('desu alone', async () => {
@@ -183,9 +188,7 @@ describe('augment', () => {
     const augmented = (await augmentTokenGroups(tokenGroups)).map(
       tokensToString
     );
-    assert.deepEqual(augmented, [
-      "だ(ダ)",
-      "です(デス)"]);
+    assert.deepEqual(augmented, ['だ(ダ)', 'です(デス)']);
   });
 
   it('今 本 as "now book"', async () => {
@@ -194,8 +197,9 @@ describe('augment', () => {
       tokensToString
     );
     assert.deepEqual(augmented, [
-      "今(イマ)|本(ホン)|だ(ダ)|。(。)",
-      "今(イマ)|本(ホン)|です(デス)|。(。)"]);
+      '今(イマ)|本(ホン)|だ(ダ)|。(。)',
+      '今(イマ)|本(ホン)|です(デス)|。(。)',
+    ]);
   });
 
   it('今 本 as "imamoto" (name)', async () => {
@@ -204,8 +208,9 @@ describe('augment', () => {
       tokensToString
     );
     assert.deepEqual(augmented, [
-      "今本(イマモト)|だ(ダ)|。(。)",
-      "今本(イマモト)|です(デス)|。(。)"]);
+      '今本(イマモト)|だ(ダ)|。(。)',
+      '今本(イマモト)|です(デス)|。(。)',
+    ]);
   });
 
   it('desu followed by adverb should not become da', async () => {
@@ -229,7 +234,9 @@ describe('augment', () => {
     const augmented = (await augmentTokenGroups(tokenGroups)).map(
       tokensToString
     );
-    assert.deepEqual(augmented, ['彼(カレ)|が(ガ)|犯人(ハンニン)|です(デス)|と(ト)|皆(ミナ)|が(ガ)|言っ(イッ)|た(タ)']);
+    assert.deepEqual(augmented, [
+      '彼(カレ)|が(ガ)|犯人(ハンニン)|です(デス)|と(ト)|皆(ミナ)|が(ガ)|言っ(イッ)|た(タ)',
+    ]);
   });
 
   it('augmentDropWatashiHa should not drop watashi if not followed by ha', async () => {
@@ -237,38 +244,51 @@ describe('augment', () => {
     const augmented = (await augmentTokenGroups(tokenGroups)).map(
       tokensToString
     );
-    assert.deepEqual(augmented.sort(), [
-      'あたし(アタシ)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
-      '俺(オレ)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
-      '僕(ボク)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
-      '本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)', // This is the result of "私 は" being (incorrectly) sliced from "私 が 本..."
-      '私(ワタシ)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
-    ].sort());
+    assert.deepEqual(
+      augmented.sort(),
+      [
+        'あたし(アタシ)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+        '俺(オレ)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+        '僕(ボク)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+        '本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)', // This is the result of "私 は" being (incorrectly) sliced from "私 が 本..."
+        '私(ワタシ)|が(ガ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+      ].sort()
+    );
   });
 
   it('augmentDropWatashiHa should correctly handle full-width space after watashi before ha', async () => {
     const tokenGroups = await tokenizeAll(['私　は本を読みます']); // U+3000 full-width space
-    const augmented = (await augmentTokenGroups(tokenGroups)).map(tokensToString).sort();
+    const augmented = (await augmentTokenGroups(tokenGroups))
+      .map(tokensToString)
+      .sort();
 
-    assert.deepEqual(augmented.sort(), [
-      'あたし(アタシ)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
-      '俺(オレ)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
-      '僕(ボク)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
-      '本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)', // Correctly dropped "私 は"
-      '私(ワタシ)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)', // Original, with space normalized
-    ].sort());
+    assert.deepEqual(
+      augmented.sort(),
+      [
+        'あたし(アタシ)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+        '俺(オレ)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+        '僕(ボク)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)',
+        '本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)', // Correctly dropped "私 は"
+        '私(ワタシ)|は(ハ)|本(ホン)|を(ヲ)|読み(ヨミ)|ます(マス)', // Original, with space normalized
+      ].sort()
+    );
   });
 
   it('pronoun replacement should not affect words containing the same character', async () => {
     const tokenGroups = await tokenizeAll(['私は私立の学校に行きます']);
-    const augmented = (await augmentTokenGroups(tokenGroups)).map(tokensToString).sort();
+    const augmented = (await augmentTokenGroups(tokenGroups))
+      .map(tokensToString)
+      .sort();
 
-    assert.deepEqual(augmented.sort(), [
-      "あたし(アタシ)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)",
-      "俺(オレ)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)",
-      "僕(ボク)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)",
-      "私(ワタシ)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)",
-      "私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)"
-    ].sort());
+    assert.deepEqual(
+      augmented.sort(),
+      [
+        'あたし(アタシ)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)',
+        '俺(オレ)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)',
+        '僕(ボク)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)',
+        '私(ワタシ)|は(ハ)|私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)',
+        '私立(シリツ)|の(ノ)|学校(ガッコウ)|に(ニ)|行き(イキ)|ます(マス)',
+      ].sort()
+    );
   });
 });

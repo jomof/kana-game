@@ -21,3 +21,4 @@ kana-game.bundled.js
 jomof-kana-game-*.tgz
 .stryker-tmp/
 stryker.log
+reports/

@@ -33,19 +33,17 @@ function makeTokenAugmenter(
   };
 }
 
-
-
-
 async function augmentDesuDaTokens(
   tokens: IpadicFeatures[]
 ): Promise<IpadicFeatures[][]> {
   const desuIndex = tokens.findIndex((t) => t.surface_form === 'です');
-  
-  if (desuIndex !== tokens.length - 1 &&
-     (desuIndex !== tokens.length - 2 ||
+
+  if (
+    desuIndex !== tokens.length - 1 &&
+    (desuIndex !== tokens.length - 2 ||
       (tokens[tokens.length - 1].pos !== '記号' &&
-      tokens[tokens.length - 1].pos !== '名詞'))) {
-    
+        tokens[tokens.length - 1].pos !== '名詞'))
+  ) {
     return Promise.resolve([]);
   }
   if (desuIndex > 0) {
@@ -54,7 +52,7 @@ async function augmentDesuDaTokens(
       return Promise.resolve([]);
     }
   }
-  
+
   const replacement = tokens
     .map((t, i) => {
       if (i === desuIndex) return 'だ';
@@ -70,26 +68,22 @@ function makeReplaceWholeToken(
   replacement: string
 ): TokenAugmenter {
   async function replace(tokens: IpadicFeatures[]) {
-    const result = []
-    let changed = false;
+    const result = [];
     for (const token of tokens) {
       if (token.surface_form === search) {
-        changed = true;
         result.push(replacement);
       } else {
         result.push(token.surface_form);
       }
     }
-    if (!changed) return Promise.resolve([]);
     return Promise.resolve([await tokenize(result.join(' '))]);
-  };
-  return replace
+  }
+  return replace;
 }
 
 const augmentDropWatashiHa = makeTokenAugmenter(
   // Guard: first two tokens are 私 + は, and there’s at least one more token
-  (tokens) => tokens.length > 1 && tokens[0].surface_form === '私', // &&
-  // tokens[1].surface_form === 'は',
+  (tokens) => tokens.length > 1 && tokens[0].surface_form === '私',
 
   // Replacer: lexically cut off the leading “私は”
   (raw) => {
