@@ -69,7 +69,7 @@
         ]),
         makeQuestion('I went[いく] to Tokyo[とうきょう] last year[きょねん].', [
           '私 は 去年 東京 に 行きました。',
-          '私 は 去年 東京 に 行った。',
+          '私 は 去年 東京 に いった。',
         ]),
         makeQuestion('I am reading[よむ] a book[ほん] right now[いま].', [
           '私 は 今 本 を 読んでいます。',
@@ -90,7 +90,7 @@
           (debug.textContent = `state: ${game.state}\nskeleton: ${game.skeleton}\nanswers (hiragana): ${game.answerHiragana}`)
       );
       await game.updateComplete;
-      let current = 6;
+      let current = 5;
       game.supplyQuestion(await questions[current]);
 
       game.addEventListener('next-question', async () => {
