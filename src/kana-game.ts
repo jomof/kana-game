@@ -424,15 +424,11 @@ export class KanaGame extends LitElement {
   }
 
   override firstUpdated() {
+    tokenize('').then(() => console.log('Tokenizer loaded')); // warm up the tokenizer
     if (this.kana) {
       wanakana.bind(this.kana, {IMEMode: true});
       this.kana.focus();
     }
-  }
-  override connectedCallback() {
-    super.connectedCallback();
-    // fire & forget: warm up the tokenizer
-    tokenize(''); // this will load the dictionary
   }
 
   protected override updated(changed: PropertyValues) {

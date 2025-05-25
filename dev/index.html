@@ -41,14 +41,12 @@
     </style>
   </head>
   <body>
-    <div class="demo">
-      <kana-game></kana-game>
-    </div>
 
-    <!-- add a debug panel -->
-    <pre id="debug"></pre>
 
     <script type="module">
+      document.addEventListener('readystatechange', () =>
+        console.log('readystatechange:', document.readyState)
+      );
       import {makeQuestion} from '../kana-game.js';
 
       // Japanese annotations on 'english' words are base form if verbs.
@@ -82,24 +80,30 @@
         ]),
       ];
 
-      window.addEventListener('DOMContentLoaded', async () => {
-        const game = document.querySelector('kana-game');
-        const debug = document.getElementById('debug');
-        game.addEventListener(
-          'properties-changed',
-          () =>
-            (debug.textContent = `state: ${game.state}\nskeleton: ${game.skeleton}\nanswers (hiragana): ${game.answerHiragana}`)
-        );
-        await game.updateComplete;
-        let current = 6;
-        game.supplyQuestion(await questions[current]);
+      console.log('Adding event listener');
 
-        game.addEventListener('next-question', async () => {
-          // advance index (wrap if you like)
-          current = (current + 1) % questions.length;
-          game.supplyQuestion(await questions[current]);
-        });
+      const game = document.querySelector('kana-game');
+      const debug = document.getElementById('debug');
+      game.addEventListener(
+        'properties-changed',
+        () =>
+          (debug.textContent = `state: ${game.state}\nskeleton: ${game.skeleton}\nanswers (hiragana): ${game.answerHiragana}`)
+      );
+      await game.updateComplete;
+      let current = 6;
+      game.supplyQuestion(await questions[current]);
+
+      game.addEventListener('next-question', async () => {
+        // advance index (wrap if you like)
+        current = (current + 1) % questions.length;
+        game.supplyQuestion(await questions[current]);
       });
     </script>
+
+    <div class="demo">
+      <kana-game></kana-game>
+    </div>
+    <!-- add a debug panel -->
+    <pre id="debug"></pre>
   </body>
 </html>
