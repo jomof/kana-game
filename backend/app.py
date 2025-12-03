@@ -124,6 +124,10 @@ def json_rpc():
         params = data.get("params", [])
         req_id = data.get("id")
 
+        user = params.get("user") if isinstance(params, dict) else None
+        if user:
+            print(f"Request from user: {user}")
+
         if method == "getNextQuestion":
             return jsonify({
                 "jsonrpc": "2.0",

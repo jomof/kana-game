@@ -39,7 +39,9 @@
               body: JSON.stringify({
                 jsonrpc: '2.0',
                 method: 'getNextQuestion',
-                params: [],
+                params: {
+                  user: 'jomof'
+                },
                 id: Date.now()
               })
             });
@@ -89,6 +91,7 @@
                         jsonrpc: '2.0',
                         method: 'provideAnswer',
                         params: {
+                            user: 'jomof',
                             question: currentQuestionPrompt,
                             score,
                             finalSkeleton,
