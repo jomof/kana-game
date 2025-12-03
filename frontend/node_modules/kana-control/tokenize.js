@@ -17,7 +17,6 @@ const loader = {
 let tokenizerPromise = null;
 function getTokenizer() {
     if (!tokenizerPromise) {
-        console.log('Initializing kuromoji tokenizer...');
         tokenizerPromise = new kuromoji.TokenizerBuilder({ loader }).build();
     }
     return tokenizerPromise;

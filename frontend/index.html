@@ -28,6 +28,7 @@
           console.log('Initializing...');
 
           const fetchNextQuestion = async () => {
+            console.log('Fetching question from /api...');
             const response = await fetch('/api', {
               method: 'POST',
               headers: {
@@ -57,26 +58,37 @@
           console.log('Loading first question...');
           const firstQuestion = await fetchNextQuestion();
           await control.supplyQuestion(firstQuestion);
-          console.log('First question loaded.');
+          console.log('First question loaded. Ready.');
           
           // Enable debug mode
           control.debug = false;
 
-          // Button to cycle through questions
-          const nextBtn = document.getElementById('next-question');
           const advanceQuestion = async () => {
             console.log('Loading next question...');
             try {
                 const nextQ = await fetchNextQuestion();
                 await control.supplyQuestion(nextQ);
+                console.log('Next question loaded.');
             } catch (e) {
                 console.error("Error fetching next question", e);
             }
           };
 
-          if (nextBtn) {
-            nextBtn.addEventListener('click', advanceQuestion);
-          }
+          control.addEventListener('question-complete', (e) => {
+            const {finalSkeleton, wrongAttempts, correctAttempts} = e.detail;
+            console.log('Question completed!');
+            console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
+            console.log(`  wrongAttempts (number): ${wrongAttempts}`);
+            console.log('  correctAttempts (string[]):', correctAttempts);
+          });
+
+          control.addEventListener('question-skipped', (e) => {
+            const {finalSkeleton, wrongAttempts, correctAttempts} = e.detail;
+            console.log('Question skipped!');
+            console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
+            console.log(`  wrongAttempts (number): ${wrongAttempts}`);
+            console.log('  correctAttempts (string[]):', correctAttempts);
+          });
           
           // Listen for request-next-question event from the component
           control.addEventListener('request-next-question', () => {
@@ -87,15 +99,10 @@
           console.log('Questions loaded. Click words with furigana to toggle pronunciation hints!');
         } catch (error) {
           console.error('Failed to create questions:', error);
-          alert('Failed to load questions. Check console for details. Error: ' + error.message);
         }
       });
     </script>
     
-    <div class="hint">
-      <button id="next-question">Next Question</button>
-    </div>
-
     <div class="demo">
       <kana-control></kana-control>
     </div>

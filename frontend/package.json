@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "kana-control": "^0.0.4"
+    "kana-control": "^0.0.7"
   },
   "devDependencies": {
     "vite": "^7.2.6"

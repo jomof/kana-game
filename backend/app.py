@@ -42,6 +42,74 @@ QUESTIONS = [
             "私 は 日本語 が 話せます。",
             "私 は 日本語 が 話せる。"
         ]
+    },
+    {
+        "prompt": "What is your hobby[しゅみ]?",
+        "answers": [
+            "あなた の 趣味 は 何 です か。",
+            "趣味 は 何 です か。"
+        ]
+    },
+    {
+        "prompt": "Where are you from[しゅっしん]?",
+        "answers": [
+            "出身 は どこ です か。",
+            "あなた の 出身 は どこ です か。"
+        ]
+    },
+    {
+        "prompt": "Do you like movies[えいが]?",
+        "answers": [
+            "映画 は 好き です か。",
+            "あなた は 映画 が 好き です か。"
+        ]
+    },
+    {
+        "prompt": "What kind of music[おんがく] do you listen[きく] to?",
+        "answers": [
+            "どんな 音楽 を 聴き ます か。",
+            "どんな 音楽 を 聴く の。"
+        ]
+    },
+    {
+        "prompt": "Have you been[いく] to Japan[にほん]?",
+        "answers": [
+            "日本 に 行った こと が あり ます か。",
+            "日本 に 行った こと ある。"
+        ]
+    },
+    {
+        "prompt": "What is your favorite[すき] food[たべもの]?",
+        "answers": [
+            "好き な 食べ物 は 何 です か。"
+        ]
+    },
+    {
+        "prompt": "Do you have siblings[きょうだい]?",
+        "answers": [
+            "兄弟 は い ます か。",
+            "兄弟 は いる の。"
+        ]
+    },
+    {
+        "prompt": "What do you do[する] on weekends[しゅうまつ]?",
+        "answers": [
+            "週末 は 何 を し ます か。",
+            "週末 は 何 を する の。"
+        ]
+    },
+    {
+        "prompt": "The weather[てんき] is nice[いい] today[きょう].",
+        "answers": [
+            "今日 は いい 天気 です ね。",
+            "今日 は いい 天気 だ ね。"
+        ]
+    },
+    {
+        "prompt": "Nice to meet you[はじめまして].",
+        "answers": [
+            "初めまして。"
+        ]
     }
 ]
 
