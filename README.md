@@ -1,11 +1,14 @@
 # Kana Game
 
+[![Canary Build](https://github.com/jomof/kana-game/actions/workflows/canary.yml/badge.svg)](https://github.com/jomof/kana-game/actions/workflows/canary.yml)
+
 A web-based game for learning Japanese Kana and grammar.
 
 ## Project Structure
 
 *   `backend/`: Python Flask application serving the JSON-RPC API.
 *   `frontend/`: Web frontend using Lit and Vite.
+    *   `temp_kana_control/`: Custom Lit component for Kana input.
 
 ## Development Setup
 
