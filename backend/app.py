@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
+import random
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -60,6 +61,13 @@ def json_rpc():
             return jsonify({
                 "jsonrpc": "2.0",
                 "result": QUESTIONS,
+                "id": req_id
+            })
+
+        if method == "getNextQuestion":
+            return jsonify({
+                "jsonrpc": "2.0",
+                "result": random.choice(QUESTIONS),
                 "id": req_id
             })
         

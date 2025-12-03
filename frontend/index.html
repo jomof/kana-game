@@ -25,44 +25,39 @@
         }
 
         try {
-          console.log('Creating questions...');
-          
-          // Fetch questions from backend
-          // Use relative path to leverage Vite proxy in dev
-          const response = await fetch('/api', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              method: 'getQuestions',
-              params: [],
-              id: 1
-            })
-          });
+          console.log('Initializing...');
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+          const fetchNextQuestion = async () => {
+            const response = await fetch('/api', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'getNextQuestion',
+                params: [],
+                id: Date.now()
+              })
+            });
 
-          const data = await response.json();
-          if (data.error) {
-            throw new Error(`JSON-RPC error: ${data.error.message}`);
-          }
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-          const questions = await Promise.all(data.result.map(async q => {
-            return await makeQuestion(q.prompt, q.answers);
-          }));
-
-          console.log('Questions created:', questions);
-
-          let currentIndex = 0; // start from first question
+            const data = await response.json();
+            if (data.error) {
+              throw new Error(`JSON-RPC error: ${data.error.message}`);
+            }
+            
+            return await makeQuestion(data.result.prompt, data.result.answers);
+          };
 
           // Load first question
           console.log('Loading first question...');
-          await control.supplyQuestion(questions[currentIndex]);
-          console.log('First question loaded. parsedEnglish:', control.parsedEnglish);
+          const firstQuestion = await fetchNextQuestion();
+          await control.supplyQuestion(firstQuestion);
+          console.log('First question loaded.');
           
           // Enable debug mode
           control.debug = false;
@@ -70,9 +65,13 @@
           // Button to cycle through questions
           const nextBtn = document.getElementById('next-question');
           const advanceQuestion = async () => {
-            currentIndex = (currentIndex + 1) % questions.length;
-            console.log('Loading question', currentIndex);
-            await control.supplyQuestion(questions[currentIndex]);
+            console.log('Loading next question...');
+            try {
+                const nextQ = await fetchNextQuestion();
+                await control.supplyQuestion(nextQ);
+            } catch (e) {
+                console.error("Error fetching next question", e);
+            }
           };
 
           if (nextBtn) {

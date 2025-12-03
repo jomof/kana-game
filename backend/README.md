@@ -25,6 +25,31 @@ The server will start on `http://localhost:8080`.
 
 ## API Usage
 
+### `getNextQuestion`
+
+**Request:**
+```json
+POST /api
+{
+    "jsonrpc": "2.0",
+    "method": "getNextQuestion",
+    "params": [],
+    "id": 1
+}
+```
+
+**Response:**
+```json
+{
+    "jsonrpc": "2.0",
+    "result": {
+        "prompt": "I live[すむ] in Seattle[シアトル].",
+        "answers": ["私 は シアトル に 住んでいます。", ...]
+    },
+    "id": 1
+}
+```
+
 ### `getQuestions`
 
 **Request:**
