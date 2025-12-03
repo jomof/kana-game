@@ -27,6 +27,8 @@
         try {
           console.log('Initializing...');
 
+          let currentQuestionPrompt = '';
+
           const fetchNextQuestion = async () => {
             console.log('Fetching question from /api...');
             const response = await fetch('/api', {
@@ -51,6 +53,7 @@
               throw new Error(`JSON-RPC error: ${data.error.message}`);
             }
             
+            currentQuestionPrompt = data.result.prompt;
             return await makeQuestion(data.result.prompt, data.result.answers);
           };
 
@@ -74,12 +77,41 @@
             }
           };
 
+          const provideAnswer = async (detail) => {
+            const {score, finalSkeleton, wrongAttempts, correctAttempts, englishHints} = detail;
+            try {
+                await fetch('/api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'provideAnswer',
+                        params: {
+                            question: currentQuestionPrompt,
+                            score,
+                            finalSkeleton,
+                            wrongAttempts,
+                            correctAttempts,
+                            englishHints
+                        },
+                        id: Date.now()
+                    })
+                });
+                console.log('Answer provided to server');
+            } catch (e) {
+                console.error('Error providing answer:', e);
+            }
+          };
+
           control.addEventListener('question-complete', (e) => {
             const {finalSkeleton, wrongAttempts, correctAttempts} = e.detail;
             console.log('Question completed!');
             console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
             console.log(`  wrongAttempts (number): ${wrongAttempts}`);
             console.log('  correctAttempts (string[]):', correctAttempts);
+            provideAnswer(e.detail);
           });
 
           control.addEventListener('question-skipped', (e) => {
@@ -88,6 +120,7 @@
             console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
             console.log(`  wrongAttempts (number): ${wrongAttempts}`);
             console.log('  correctAttempts (string[]):', correctAttempts);
+            provideAnswer(e.detail);
           });
           
           // Listen for request-next-question event from the component

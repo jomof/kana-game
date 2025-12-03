@@ -131,6 +131,16 @@ def json_rpc():
                 "id": req_id
             })
         
+        if method == "provideAnswer":
+            # Expecting params to be a dict or list, but let's handle dict for named params
+            # or just log whatever we get
+            print(f"Received answer: {params}")
+            return jsonify({
+                "jsonrpc": "2.0",
+                "result": "ok",
+                "id": req_id
+            })
+        
         return jsonify({
             "jsonrpc": "2.0",
             "error": {"code": -32601, "message": "Method not found"},
