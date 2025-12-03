@@ -1,0 +1,86 @@
+name: Canary Publish
+
+on:
+  push:
+    branches: [ main ]
+    # Ignore tag pushes; those are handled by Publish workflow
+    tags-ignore: ['*']
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: npm ci || npm i
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Build
+        run: npm run build
+      - name: Test (dev + prod)
+        run: npm test
+      - name: Analyze component
+        run: npm run analyze
+      - name: Build docs (updates bundled size)
+        run: npm run docs
+      - name: Commit updated docs for size badge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          # Compute gzipped size in bytes and human-readable KB
+          BYTES=$(cat docs/kana-control.bundled.js | gzip -9 | wc -c | tr -d ' ')
+          export BYTES
+          KB=$(python3 - <<'PY'
+          import os
+          b=int(os.environ['BYTES'])
+          print(f"{b/1024:.1f} KB")
+          PY
+          )
+          # Update README badge placeholder (URL-encode spaces)
+          KB_ENC=$(echo "$KB" | sed 's/ /%20/g')
+          sed -i "s/{{GZIP_SIZE_BADGE}}/${KB_ENC}/g" README.md
+          # Stage changed files
+          if [[ -n "$(git status --porcelain docs/)" ]]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add docs/
+          fi
+          if [[ -n "$(git status --porcelain README.md)" ]]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add README.md
+          fi
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git commit -m "docs: update bundle sizes (gzip and raw)"
+            git push origin HEAD:${{ github.ref_name }}
+          else
+            echo "No changes in docs/ to commit."
+          fi
+      - name: Prepare canary version
+        run: |
+          BASE_VERSION=$(jq -r '.version' package.json)
+          SHORT_SHA=${GITHUB_SHA::7}
+          CANARY_VERSION="${BASE_VERSION}-canary.${SHORT_SHA}"
+          echo "Publishing canary version: $CANARY_VERSION"
+          cp package.json package.json.bak
+          node - <<'EOF'
+          const fs=require('fs');
+          const sha=process.env.GITHUB_SHA.slice(0,7);
+          const pkg=JSON.parse(fs.readFileSync('package.json'));
+          pkg.version = `${pkg.version}-canary.${sha}`;
+          fs.writeFileSync('package.json', JSON.stringify(pkg,null,2));
+          EOF
+          jq '.version' package.json
+      - name: Publish canary
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --tag canary --access public
+      - name: Restore original package.json
+        run: mv package.json.bak package.json

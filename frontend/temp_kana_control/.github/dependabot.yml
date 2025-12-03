@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    allow:
+      - dependency-type: "direct"
+    commit-message:
+      prefix: "deps(root):"
+  - package-ecosystem: "npm"
+    directory: "/docs-src"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    allow:
+      - dependency-type: "direct"
+    commit-message:
+      prefix: "deps(docs):"
