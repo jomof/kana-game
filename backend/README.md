@@ -50,34 +50,6 @@ POST /api
 }
 ```
 
-### `getQuestions`
-
-**Request:**
-```json
-POST /api
-{
-    "jsonrpc": "2.0",
-    "method": "getQuestions",
-    "params": [],
-    "id": 1
-}
-```
-
-**Response:**
-```json
-{
-    "jsonrpc": "2.0",
-    "result": [
-        {
-            "prompt": "I live[すむ] in Seattle[シアトル].",
-            "answers": ["私 は シアトル に 住んでいます。", ...]
-        },
-        ...
-    ],
-    "id": 1
-}
-```
-
 ## Deployment to Google Cloud Run
 
 1.  Build the container image:

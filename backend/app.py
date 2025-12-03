@@ -56,14 +56,6 @@ def json_rpc():
         params = data.get("params", [])
         req_id = data.get("id")
 
-        if method == "getQuestions":
-            # In a real app, params might specify count, difficulty, etc.
-            return jsonify({
-                "jsonrpc": "2.0",
-                "result": QUESTIONS,
-                "id": req_id
-            })
-
         if method == "getNextQuestion":
             return jsonify({
                 "jsonrpc": "2.0",
