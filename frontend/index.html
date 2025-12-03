@@ -27,72 +27,33 @@
         try {
           console.log('Creating questions...');
           
-          // Original questions (full set imported from kana-game)
-          const questions = [
-            await makeQuestion('I live[すむ] in Seattle[シアトル].', [
-              '私 は シアトル に 住んでいます。',
-              '私 は シアトル に 住んでる。',
-            ]),
-            await makeQuestion('I am a student[がくせい].', [
-              '私 は 学生 です。',
-            ]),
-            await makeQuestion('I am a teacher[せんせい].', [
-              '私 は 先生 です。',
-            ]),
-            await makeQuestion('I eat[たべる] sushi[すし] every[まい] day[にち].', [
-              '私 は 毎 日 寿司 を 食べます。',
-              '私 は 毎 日 寿司 を 食べる。',
-            ]),
-            await makeQuestion('I can speak[はなす] Japanese[にほんご].', [
-              '私 は 日本語 を 話すこと が できます。',
-              '私 は 日本語 を 話すこと が できる。',
-              '私 は 日本語 が 話せます。',
-              '私 は 日本語 が 話せる。',
-            ]),
-            await makeQuestion('I went[いく] to Tokyo[とうきょう] last year[きょねん].', [
-              '私 は 去年 東京 に 行きました。',
-              '私 は 去年 東京 に いった。',
-            ]),
-            await makeQuestion('I am reading[よむ] a book[ほん] right now[いま].', [
-              '私 は 今 本 を 読んでいます。',
-              '私 は 今 本 を 読んでいる。',
-            ]),
-            await makeQuestion('I want to go[いく] to Japan[にほん].', [
-              '私 は 日本 に 行きたい です。',
-            ]),
-            
-            // Additional questions to cover all augmenters in augment.ts:
-            
-            // Augmenters: 私 variants, だった↔でした (past copula compound tokens)
-            await makeQuestion('I was a teacher[せんせい].', [
-              '私 は 先生 でし た。',
-            ]),
-            
-            // Augmenters: 私 variants, る→ない (verb negatives), ます forms
-            await makeQuestion('I do not eat[たべる] meat[にく].', [
-              '私 は 肉 は 食べ ませ ん。',
-            ]),
-            
-            // Augmenters: 私 variants, と思う↔って思う (quotation contraction), ます↔dictionary
-            await makeQuestion('I think[おもう] that[という] it is good[いい].', [
-              '私 は いい と 思い ます。',
-            ]),
-            
-            // Augmenters: という↔っていう with 言う, ます forms
-            await makeQuestion('She says[いう] that[という] she is busy[いそがしい].', [
-              '彼女 は 忙しい と 言い ます。',
-            ]),
-            
-            // Augmenters: では↔じゃ (contraction), ではない↔です (copula negative)
-            await makeQuestion('That is not a cat[ねこ].', [
-              'それ は 猫 では あり ませ ん。',
-            ]),
-            
-            // Augmenters: あなた↔君, ている↔てる, ます forms
-            await makeQuestion('Do you know[しる]?', [
-              'あなた は 知っ て い ます か。',
-            ]),
-          ];
+          // Fetch questions from backend
+          // Use relative path to leverage Vite proxy in dev
+          const response = await fetch('/api', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'getQuestions',
+              params: [],
+              id: 1
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (data.error) {
+            throw new Error(`JSON-RPC error: ${data.error.message}`);
+          }
+
+          const questions = await Promise.all(data.result.map(async q => {
+            return await makeQuestion(q.prompt, q.answers);
+          }));
 
           console.log('Questions created:', questions);
 
