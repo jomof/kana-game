@@ -67,6 +67,32 @@ The frontend is built with Vite.
 
 The backend provides a JSON-RPC API at `/api`.
 
-*   **Method**: `getQuestions`
-*   **Params**: `[]`
-*   **Returns**: A list of question objects.
+### JSON-RPC Methods
+
+#### `getNextQuestion`
+
+*   **Description**: Retrieves a random question from the server.
+*   **Params**: `[]` (None required)
+*   **Returns**: A single question object containing a `prompt` and a list of acceptable `answers`.
+    ```json
+    {
+      "prompt": "I live[すむ] in Seattle[シアトル].",
+      "answers": [
+        "私 は シアトル に 住んでいます。",
+        "私 は シアトル に 住んでる。"
+      ]
+    }
+    ```
+
+#### `provideAnswer`
+
+*   **Description**: Submits an answer to the server (currently logs the answer).
+*   **Params**: The answer data (e.g., `{"question": "...", "answer": "..."}`).
+*   **Returns**: `"ok"`
+
+### Other Endpoints
+
+#### `GET /health`
+
+*   **Description**: Health check endpoint.
+*   **Returns**: `{"status": "healthy"}`
