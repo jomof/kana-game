@@ -109,8 +109,9 @@
           };
 
           control.addEventListener('question-complete', (e) => {
-            const {finalSkeleton, wrongAttempts, correctAttempts} = e.detail;
+            const {score, finalSkeleton, wrongAttempts, correctAttempts} = e.detail;
             console.log('Question completed!');
+            console.log(`  score (number): ${score}`);
             console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
             console.log(`  wrongAttempts (number): ${wrongAttempts}`);
             console.log('  correctAttempts (string[]):', correctAttempts);
@@ -118,8 +119,9 @@
           });
 
           control.addEventListener('question-skipped', (e) => {
-            const {finalSkeleton, wrongAttempts, correctAttempts} = e.detail;
+            const {score, finalSkeleton, wrongAttempts, correctAttempts} = e.detail;
             console.log('Question skipped!');
+            console.log(`  score (number): ${score}`);
             console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
             console.log(`  wrongAttempts (number): ${wrongAttempts}`);
             console.log('  correctAttempts (string[]):', correctAttempts);
