@@ -6,6 +6,8 @@ import yaml
 import glob
 from pathlib import Path
 from srs_engine import FsrsSQLiteScheduler
+import json
+import datetime
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -13,6 +15,20 @@ CORS(app)  # Enable CORS for all routes
 # Initialize FSRS engine
 DATA_DIR = Path(__file__).parent / "data"
 ENGINES = {}
+
+def log_transaction(user, request_data, response_data):
+    if not user:
+        user = "default"
+    
+    log_file = DATA_DIR / f"{user}.log"
+    
+    timestamp = datetime.datetime.now().isoformat()
+    try:
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(f"{timestamp} REQUEST: {json.dumps(request_data, ensure_ascii=False)}\n")
+            f.write(f"{timestamp} RESPONSE: {json.dumps(response_data, ensure_ascii=False)}\n")
+    except Exception as e:
+        print(f"Failed to log transaction: {e}")
 
 def get_engine(user):
     if not user:
@@ -31,7 +47,7 @@ def get_questions():
     sentences_dir = DATA_DIR / "sentences"
     sentences_dir.mkdir(parents=True, exist_ok=True)
     
-    files = sorted(glob.glob(str(sentences_dir / "*.yml")))
+    files = sorted(glob.glob(str(sentences_dir / "*.yml")) + glob.glob(str(sentences_dir / "*.yaml")))
     if not files:
         return []
 
@@ -46,7 +62,18 @@ def get_questions():
                 try:
                     data = yaml.safe_load(stream)
                     if data:
-                        questions.extend(data)
+                        if isinstance(data, list):
+                            questions.extend(data)
+                        elif isinstance(data, dict) and 'examples' in data:
+                            for ex in data['examples']:
+                                prompt = ex.get('english')
+                                japanese_answers = ex.get('japanese', [])
+                                cleaned_answers = [ans.replace('{', '').replace('}', '') for ans in japanese_answers]
+                                if prompt and cleaned_answers:
+                                    questions.append({
+                                        "prompt": prompt,
+                                        "answers": cleaned_answers
+                                    })
                 except yaml.YAMLError as exc:
                     print(exc)
         QUESTIONS_CACHE['timestamp'] = max_mtime
@@ -56,102 +83,113 @@ def get_questions():
 
 @app.route('/api', methods=['POST'])
 def json_rpc():
+    request_data = None
+    response_data = None
+    user = None
+
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}, "id": None})
+        request_data = request.get_json()
+        if not request_data:
+            response_data = {"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}, "id": None}
+        else:
+            method = request_data.get("method")
+            params = request_data.get("params", [])
+            req_id = request_data.get("id")
 
-        method = data.get("method")
-        params = data.get("params", [])
-        req_id = data.get("id")
+            user = params.get("user") if isinstance(params, dict) else None
+            if user:
+                print(f"Request from user: {user}")
+            
+            engine = get_engine(user)
 
-        user = params.get("user") if isinstance(params, dict) else None
-        if user:
-            print(f"Request from user: {user}")
-        
-        engine = get_engine(user)
-
-        if method == "getNextQuestion":
-            # Try to get next due question from SRS
-            next_key = engine.get_next_question()
-            
-            all_questions = get_questions()
-            
-            question = None
-            if next_key:
-                # Find the question object for this key
-                for q in all_questions:
-                    if q["prompt"] == next_key:
-                        question = q
-                        break
-            
-            # If no question is due (or key not found), pick the next new question
-            if not question:
-                for q in all_questions:
-                    if not engine.has_card(q["prompt"]):
-                        question = q
-                        break
-            
-            # If still no question (all questions seen and none due), pick a random one
-            if not question and all_questions:
-                candidates = [q for q in all_questions if not engine.is_busy(q["prompt"], 15)]
-                if candidates:
-                    question = random.choice(candidates)
-                else:
-                    question = random.choice(all_questions)
-
-            return jsonify({
-                "jsonrpc": "2.0",
-                "result": question,
-                "id": req_id
-            })
-        
-
-        if method == "provideAnswer":
-            # Expecting params to be a dict or list, but let's handle dict for named params
-            # or just log whatever we get
-            print(f"Received answer: {params}")
-            
-            if isinstance(params, dict):
-                question_prompt = params.get("question")
-                score = params.get("score")
+            if method == "getNextQuestion":
+                # Try to get next due question from SRS
+                next_key = engine.get_next_question()
                 
-                if question_prompt:
-                    if score is None or score == -1:
-                        print(f"Skipping SRS record for '{question_prompt}' (score: {score})")
-                        try:
-                            engine.bury_card(question_prompt, 15)
-                            print(f"Buried card '{question_prompt}' for 15 minutes")
-                        except Exception as e:
-                            print(f"Error burying card: {e}")
+                all_questions = get_questions()
+                
+                question = None
+                if next_key:
+                    # Find the question object for this key
+                    for q in all_questions:
+                        if q["prompt"] == next_key:
+                            question = q
+                            break
+                
+                # If no question is due (or key not found), pick the next new question
+                if not question:
+                    for q in all_questions:
+                        if not engine.has_card(q["prompt"]):
+                            question = q
+                            break
+                
+                # If still no question (all questions seen and none due), pick a random one
+                if not question and all_questions:
+                    candidates = [q for q in all_questions if not engine.is_busy(q["prompt"], 15)]
+                    if candidates:
+                        question = random.choice(candidates)
                     else:
-                        try:
-                            # Map frontend score (0-100?) to FSRS score (0-3)
-                            fsrs_score = score
-                            if score > 3:
-                                if score >= 90: fsrs_score = 3
-                                elif score >= 75: fsrs_score = 2
-                                elif score >= 50: fsrs_score = 1
-                                else: fsrs_score = 0
-                            
-                            engine.record_answer(question_prompt, int(fsrs_score))
-                            print(f"Recorded SRS answer for '{question_prompt}': {fsrs_score}")
-                        except Exception as e:
-                            print(f"Error recording SRS answer: {e}")
+                        question = random.choice(all_questions)
 
-            return jsonify({
-                "jsonrpc": "2.0",
-                "result": "ok",
-                "id": req_id
-            })
-        
-        return jsonify({
-            "jsonrpc": "2.0",
-            "error": {"code": -32601, "message": "Method not found"},
-            "id": req_id
-        })
+                response_data = {
+                    "jsonrpc": "2.0",
+                    "result": question,
+                    "id": req_id
+                }
+            
+
+            elif method == "provideAnswer":
+                # Expecting params to be a dict or list, but let's handle dict for named params
+                # or just log whatever we get
+                print(f"Received answer: {params}")
+                
+                if isinstance(params, dict):
+                    question_prompt = params.get("question")
+                    score = params.get("score")
+                    
+                    if question_prompt:
+                        if score is None or score == -1:
+                            print(f"Skipping SRS record for '{question_prompt}' (score: {score})")
+                            try:
+                                engine.bury_card(question_prompt, 15)
+                                print(f"Buried card '{question_prompt}' for 15 minutes")
+                            except Exception as e:
+                                print(f"Error burying card: {e}")
+                        else:
+                            try:
+                                # Map frontend score (0-100?) to FSRS score (0-3)
+                                fsrs_score = score
+                                if score > 3:
+                                    if score >= 90: fsrs_score = 3
+                                    elif score >= 75: fsrs_score = 2
+                                    elif score >= 50: fsrs_score = 1
+                                    else: fsrs_score = 0
+                                
+                                engine.record_answer(question_prompt, int(fsrs_score))
+                                print(f"Recorded SRS answer for '{question_prompt}': {fsrs_score}")
+                            except Exception as e:
+                                print(f"Error recording SRS answer: {e}")
+
+                response_data = {
+                    "jsonrpc": "2.0",
+                    "result": "ok",
+                    "id": req_id
+                }
+            
+            else:
+                response_data = {
+                    "jsonrpc": "2.0",
+                    "error": {"code": -32601, "message": "Method not found"},
+                    "id": req_id
+                }
+
     except Exception as e:
-        return jsonify({"jsonrpc": "2.0", "error": {"code": -32603, "message": "Internal error", "data": str(e)}, "id": None})
+        response_data = {"jsonrpc": "2.0", "error": {"code": -32603, "message": "Internal error", "data": str(e)}, "id": None}
+
+    if request_data:
+        log_transaction(user, request_data, response_data)
+
+    return jsonify(response_data)
 
 @app.route('/health', methods=['GET'])
 def health_check():
