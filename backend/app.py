@@ -182,17 +182,6 @@ def json_rpc():
                     else:
                         try:
                             # Map frontend score (0-100?) to FSRS score (0-3)
-                            # Assuming frontend sends 0-3 based on previous context, but let's be safe
-                            # If score is 0-100, we need to map it. 
-                            # Let's assume the frontend sends 0-3 as per the srs_engine.py docstring
-                            # But wait, the frontend sends `score` which might be 0-100.
-                            # Let's check the frontend code again or assume 0-3 for now based on user request.
-                            # Actually, let's look at the previous turn. The user said "kana-control added a 'score'".
-                            # We should probably normalize it.
-                            # For now, let's pass it through and let the engine validate/handle it.
-                            # But srs_engine expects 0-3.
-                            
-                            # Simple mapping if score is > 3 (e.g. percentage)
                             fsrs_score = score
                             if score > 3:
                                 if score >= 90: fsrs_score = 3
