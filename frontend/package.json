@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "kana-control": "^0.0.7"
+    "kana-control": "^0.0.8"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",

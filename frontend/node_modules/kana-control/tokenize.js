@@ -24,7 +24,7 @@ function getTokenizer() {
 const defaultTokenize = async (text) => {
     try {
         const tokenizer = await getTokenizer();
-        return tokenizer.tokenize(text);
+        return tokenizer.tokenize(text.replace(/\s/g, ''));
     }
     catch (error) {
         console.error('Tokenization failed:', error);
