@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Kill existing backend instance
+echo "Stopping existing backend..."
+pkill -f "python app.py" || true
+
 # Navigate to backend directory
 cd backend
 

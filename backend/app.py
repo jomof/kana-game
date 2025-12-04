@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import random
+import yaml
+import glob
 from pathlib import Path
 from srs_engine import FsrsSQLiteScheduler
 
@@ -19,112 +21,38 @@ def get_engine(user):
         ENGINES[user] = FsrsSQLiteScheduler.for_user(user, DATA_DIR)
     return ENGINES[user]
 
-# Sample data based on frontend/index.html
-QUESTIONS = [
-    {
-        "prompt": "I live[すむ] in Seattle[シアトル].",
-        "answers": [
-            "私 は シアトル に 住んでいます。",
-            "私 は シアトル に 住んでる。"
-        ]
-    },
-    {
-        "prompt": "I am a student[がくせい].",
-        "answers": [
-            "私 は 学生 です。"
-        ]
-    },
-    {
-        "prompt": "I am a teacher[せんせい].",
-        "answers": [
-            "私 は 先生 です。"
-        ]
-    },
-    {
-        "prompt": "I eat[たべる] sushi[すし] every[まい] day[にち].",
-        "answers": [
-            "私 は 毎 日 寿司 を 食べます。",
-            "私 は 毎 日 寿司 を 食べる。"
-        ]
-    },
-    {
-        "prompt": "I can speak[はなす] Japanese[にほんご].",
-        "answers": [
-            "私 は 日本語 を 話すこと が できます。",
-            "私 は 日本語 を 話すこと が できる。",
-            "私 は 日本語 が 話せます。",
-            "私 は 日本語 が 話せる。"
-        ]
-    },
-    {
-        "prompt": "What is your hobby[しゅみ]?",
-        "answers": [
-            "あなた の 趣味 は 何 です か。",
-            "趣味 は 何 です か。"
-        ]
-    },
-    {
-        "prompt": "Where are you from[しゅっしん]?",
-        "answers": [
-            "出身 は どこ です か。",
-            "あなた の 出身 は どこ です か。"
-        ]
-    },
-    {
-        "prompt": "Do you like movies[えいが]?",
-        "answers": [
-            "映画 は 好き です か。",
-            "あなた は 映画 が 好き です か。"
-        ]
-    },
-    {
-        "prompt": "What kind of music[おんがく] do you listen[きく] to?",
-        "answers": [
-            "どんな 音楽 を 聴き ます か。",
-            "どんな 音楽 を 聴く の。"
-        ]
-    },
-    {
-        "prompt": "Have you been[いく] to Japan[にほん]?",
-        "answers": [
-            "日本 に 行った こと が あり ます か。",
-            "日本 に 行った こと ある。"
-        ]
-    },
-    {
-        "prompt": "What is your favorite[すき] food[たべもの]?",
-        "answers": [
-            "好き な 食べ物 は 何 です か。"
-        ]
-    },
-    {
-        "prompt": "Do you have siblings[きょうだい]?",
-        "answers": [
-            "兄弟 は い ます か。",
-            "兄弟 は いる の。"
-        ]
-    },
-    {
-        "prompt": "What do you do[する] on weekends[しゅうまつ]?",
-        "answers": [
-            "週末 は 何 を し ます か。",
-            "週末 は 何 を する の。"
-        ]
-    },
-    {
-        "prompt": "The weather[てんき] is nice[いい] today[きょう].",
-        "answers": [
-            "今日 は いい 天気 です ね。",
-            "今日 は いい 天気 だ ね。"
-        ]
-    },
-    {
-        "prompt": "Nice to meet you[はじめまして].",
-        "answers": [
-            "初めまして。"
-        ]
-    }
-]
+QUESTIONS_CACHE = {
+    'timestamp': 0,
+    'data': []
+}
+
+def get_questions():
+    global QUESTIONS_CACHE
+    sentences_dir = DATA_DIR / "sentences"
+    sentences_dir.mkdir(parents=True, exist_ok=True)
+    
+    files = sorted(glob.glob(str(sentences_dir / "*.yml")))
+    if not files:
+        return []
+
+    # Get the latest modification time
+    max_mtime = max(os.path.getmtime(f) for f in files)
+    
+    if max_mtime > QUESTIONS_CACHE['timestamp']:
+        print("Reloading questions...")
+        questions = []
+        for f in files:
+            with open(f, 'r', encoding='utf-8') as stream:
+                try:
+                    data = yaml.safe_load(stream)
+                    if data:
+                        questions.extend(data)
+                except yaml.YAMLError as exc:
+                    print(exc)
+        QUESTIONS_CACHE['timestamp'] = max_mtime
+        QUESTIONS_CACHE['data'] = questions
+        
+    return QUESTIONS_CACHE['data']
 
 @app.route('/api', methods=['POST'])
 def json_rpc():
@@ -147,19 +75,30 @@ def json_rpc():
             # Try to get next due question from SRS
             next_key = engine.get_next_question()
             
+            all_questions = get_questions()
+            
             question = None
             if next_key:
                 # Find the question object for this key
-                # In a real app, this would be a DB lookup
-                for q in QUESTIONS:
+                for q in all_questions:
                     if q["prompt"] == next_key:
                         question = q
                         break
             
-            # If no question is due (or key not found), pick a random one
-            # This ensures the user always gets a question even if they are "done" for now
+            # If no question is due (or key not found), pick the next new question
             if not question:
-                question = random.choice(QUESTIONS)
+                for q in all_questions:
+                    if not engine.has_card(q["prompt"]):
+                        question = q
+                        break
+            
+            # If still no question (all questions seen and none due), pick a random one
+            if not question and all_questions:
+                candidates = [q for q in all_questions if not engine.is_busy(q["prompt"], 15)]
+                if candidates:
+                    question = random.choice(candidates)
+                else:
+                    question = random.choice(all_questions)
 
             return jsonify({
                 "jsonrpc": "2.0",
@@ -179,6 +118,11 @@ def json_rpc():
                 if question_prompt and score is not None:
                     if score == -1:
                         print(f"Skipping SRS record for '{question_prompt}' (score: -1)")
+                        try:
+                            engine.bury_card(question_prompt, 15)
+                            print(f"Buried card '{question_prompt}' for 15 minutes")
+                        except Exception as e:
+                            print(f"Error burying card: {e}")
                     else:
                         try:
                             # Map frontend score (0-100?) to FSRS score (0-3)

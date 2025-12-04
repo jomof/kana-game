@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -199,6 +199,17 @@ class FsrsSQLiteScheduler:
 
     # ---------- public API ----------
 
+    def has_card(self, key: str) -> bool:
+        """
+        Check if a card with the given key exists in the database (active or not).
+        """
+        c = self._conn.cursor()
+        row = c.execute(
+            "SELECT 1 FROM cards WHERE key = ?",
+            (key,),
+        ).fetchone()
+        return row is not None
+
     def get_next_question(self) -> Optional[str]:
         """
         Return the key of the next due question, or None if no question is due.
@@ -223,6 +234,36 @@ class FsrsSQLiteScheduler:
             return None
         return row["key"]
 
+    def bury_card(self, key: str, minutes: int = 15) -> None:
+        """
+        Delay the card for a specified number of minutes (default 15).
+        This is useful for skipping a card or enforcing a minimum wait time.
+        """
+        card = self._ensure_card(key)
+        min_due = utc_now() + timedelta(minutes=minutes)
+        if card.due < min_due:
+            card.due = min_due
+        self._update_card(key, card)
+
+    def is_busy(self, key: str, minutes: int = 15) -> bool:
+        """
+        Check if the card was updated within the last `minutes`.
+        """
+        c = self._conn.cursor()
+        row = c.execute(
+            "SELECT updated_at_utc FROM cards WHERE key = ?",
+            (key,),
+        ).fetchone()
+        if row is None:
+            return False
+        
+        updated_at = datetime.fromisoformat(row["updated_at_utc"])
+        if updated_at.tzinfo is None:
+             updated_at = updated_at.replace(tzinfo=timezone.utc)
+             
+        cutoff = utc_now() - timedelta(minutes=minutes)
+        return updated_at > cutoff
+
     def record_answer(self, key: str, score: int) -> None:
         """
         Update FSRS state for the given question key based on a 0-3 score.
@@ -240,6 +281,11 @@ class FsrsSQLiteScheduler:
         card = self._ensure_card(key)
 
         card, review_log = self._scheduler.review_card(card, rating)
+
+        # Enforce minimum 15 minutes wait
+        min_due = utc_now() + timedelta(minutes=15)
+        if card.due < min_due:
+            card.due = min_due
 
         # persist card
         self._update_card(key, card)

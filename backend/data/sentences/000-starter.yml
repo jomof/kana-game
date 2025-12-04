@@ -1,0 +1,165 @@
+- prompt: "I live[すむ] in Seattle[シアトル]."
+  answers:
+    - "私はシアトルに住んでいます。"
+    - "私はシアトルに住んでる。"
+    - "シアトルに住んでいます。"
+    - "シアトルに住んでるよ。"
+
+- prompt: "I am a student[がくせい]."
+  answers:
+    - "私は学生です。"
+    - "学生です。"
+    - "僕は学生です。"   # masculine
+    - "私は学生なんです。"
+
+- prompt: "I am a teacher[せんせい]."
+  answers:
+    - "私は先生です。"
+    - "先生です。"
+    - "僕は先生です。"   # masculine
+    - "私は先生なんです。"
+
+- prompt: "I eat[たべる] sushi[すし] every[まい] day[にち]."
+  answers:
+    - "私は毎日寿司を食べます。"
+    - "私は毎日寿司を食べる。"
+    - "毎日寿司を食べます。"
+    - "毎日寿司を食べてるよ。"
+
+- prompt: "I can speak[はなす] Japanese[にほんご]."
+  answers:
+    - "私は日本語を話すことができます。"
+    - "私は日本語を話すことができる。"
+    - "私は日本語が話せます。"
+    - "私は日本語が話せる。"
+    - "日本語は話せますよ。"
+    - "日本語なら話せます。"
+
+- prompt: "What is your hobby[しゅみ]?"
+  answers:
+    - "あなたの趣味は何ですか。"
+    - "趣味は何ですか。"
+    - "趣味って何？"
+    - "趣味は何なの？"
+
+- prompt: "Where are you from[しゅっしん]?"
+  answers:
+    - "出身はどこですか。"
+    - "あなたの出身はどこですか。"
+    - "どこの出身ですか。"
+    - "どこから来たの？"
+
+- prompt: "Do you like movies[えいが]?"
+  answers:
+    - "映画は好きですか。"
+    - "あなたは映画が好きですか。"
+    - "映画好きですか。"
+    - "映画って好き？"
+
+- prompt: "What kind of music[おんがく] do you listen[きく] to?"
+  answers:
+    - "どんな音楽を聴きますか。"
+    - "どんな音楽を聴くの。"
+    - "普段どんな音楽を聴いてる？"
+    - "よく聴く音楽は何？"
+
+- prompt: "Have you been[いく] to Japan[にほん]?"
+  answers:
+    - "日本に行ったことがありますか。"
+    - "日本に行ったことある。"
+    - "日本へ行ったことはありますか。"
+    - "日本に行ったことある？"
+
+- prompt: "What is your favorite[すき] food[たべもの]?"
+  answers:
+    - "好きな食べ物は何ですか。"
+    - "一番好きな食べ物は何ですか。"
+    - "好きな食べ物って何？"
+    - "何の食べ物が好き？"
+
+- prompt: "Do you have siblings[きょうだい]?"
+  answers:
+    - "兄弟はいますか。"
+    - "兄弟はいるの。"
+    - "兄弟いる？"
+    - "兄弟はいますかね？"
+
+- prompt: "What do you do[する] on weekends[しゅうまつ]?"
+  answers:
+    - "週末は何をしますか。"
+    - "週末は何をするの。"
+    - "週末は何してる？"
+    - "週末は普段どう過ごしてる？"
+
+- prompt: "The weather[てんき] is nice[いい] today[きょう]."
+  answers:
+    - "今日はいい天気ですね。"
+    - "今日はいい天気だね。"
+    - "今日、天気いいね。"
+    - "今日は本当にいい天気だよ。"
+
+- prompt: "Nice to meet you[はじめまして]."
+  answers:
+    - "初めまして。"
+    - "初めまして、よろしくお願いします。"
+    - "初めまして、どうぞよろしく。"
+
+- prompt: "Do you come[くる] here[ここ] often[よく]?"
+  answers:
+    - "ここにはよく来ますか？"
+    - "ここってよく来るの？"
+    - "よくここに来る？"
+
+- prompt: "What[なに] do you usually[ふだん] do[する] for fun[たのしみ]?"
+  answers:
+    - "普段は何をして楽しんでいますか？"
+    - "普段は何して遊んでるの？"
+    - "よく何してる？"
+
+- prompt: "Would you like[したい] to get coffee[コーヒー] together[いっしょ] sometime[こんど]?"
+  answers:
+    - "よかったら今度一緒にコーヒーでもどうですか？"
+    - "今度コーヒー行かない？"
+    - "一緒にコーヒーどう？"
+
+- prompt: "What[なに] kind[どんな] of places[ところ] do you like[すき] to visit[いく]?"
+  answers:
+    - "どんな場所に行くのが好きですか？"
+    - "どんなとこ好き？"
+    - "よくどこ行くの？"
+
+- prompt: "Are you more of an indoor[インドア] or outdoor[アウトドア] person[ひと]?"
+  answers:
+    - "インドア派ですか？アウトドア派ですか？"
+    - "インドア？それともアウトドア？"
+    - "どっちタイプ？"
+
+- prompt: "What[なに] kind[どんな] of food[たべもの] do you like[すき] on a date[デート]?"
+  answers:
+    - "デートではどんな料理が好きですか？"
+    - "デートなら何食べたい？"
+    - "好きなデートごはんってある？"
+
+- prompt: "Do you prefer[すき] quiet[しずか] places[ところ] or lively[にぎやか] places[ところ]?"
+  answers:
+    - "静かな場所とにぎやかな場所、どちらが好きですか？"
+    - "静かなとこが好き？にぎやかなとこ？"
+    - "どっちの雰囲気が好き？"
+
+- prompt: "What[なに] was your first[さいしょ] impression[いんしょう] of me[ぼく]?"
+  answers:
+    - "僕の第一印象はどうでしたか？"
+    - "第一印象どうだった？"
+    - "最初どう思った？"
+
+- prompt: "What[なに] are you looking for[もとめる] in a relationship[かんけい]?"
+  answers:
+    - "どんな関係を望んでいますか？"
+    - "どんな感じの関係が理想？"
+    - "どんな付き合い方が好き？"
+
+- prompt: "Can I see[あう] you again[また]?"
+  answers:
+    - "またお会いしてもいいですか？"
+    - "また会えたら嬉しいです。"
+    - "また会いたいな。"

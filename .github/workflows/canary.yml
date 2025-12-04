@@ -24,6 +24,8 @@ jobs:
         pip install -r requirements.txt
     - name: Check for syntax errors
       run: python -m compileall . -x "venv|__pycache__"
+    - name: Run Unit Tests
+      run: python -m unittest discover -s tests
 
   frontend:
     runs-on: ubuntu-latest
