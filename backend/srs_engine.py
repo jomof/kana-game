@@ -62,7 +62,7 @@ class FsrsSQLiteScheduler:
 
     def __init__(self, config: FsrsConfig) -> None:
         self.config = config
-        self._conn = sqlite3.connect(config.db_path)
+        self._conn = sqlite3.connect(config.db_path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._ensure_schema()
         self._scheduler = self._load_or_init_scheduler()

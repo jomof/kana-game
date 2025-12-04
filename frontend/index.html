@@ -133,7 +133,11 @@
             console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
             console.log(`  wrongAttempts (number): ${wrongAttempts}`);
             console.log('  correctAttempts (string[]):', correctAttempts);
-            provideAnswer(e.detail);
+            (async () => {
+              await provideAnswer(e.detail);
+              // After answer is provided, request next question
+              advanceQuestion();
+            })();
           });
           
           // Listen for request-next-question event from the component

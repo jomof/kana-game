@@ -105,37 +105,52 @@ def json_rpc():
             if method == "getNextQuestion":
                 # Try to get next due question from SRS
                 next_key = engine.get_next_question()
-                
                 all_questions = get_questions()
-                
                 question = None
+                srs_log_msg = None
                 if next_key:
-                    # Find the question object for this key
                     for q in all_questions:
                         if q["prompt"] == next_key:
                             question = q
+                            srs_log_msg = f"SRS: Selected due question '{q['prompt']}'"
                             break
-                
-                # If no question is due (or key not found), pick the next new question
                 if not question:
                     for q in all_questions:
                         if not engine.has_card(q["prompt"]):
                             question = q
+                            srs_log_msg = f"SRS: Selected never-reviewed question '{q['prompt']}'"
                             break
-                
-                # If still no question (all questions seen and none due), pick a random one
                 if not question and all_questions:
                     candidates = [q for q in all_questions if not engine.is_busy(q["prompt"], 15)]
                     if candidates:
                         question = random.choice(candidates)
+                        srs_log_msg = f"SRS: Selected random non-busy question '{question['prompt']}'"
                     else:
-                        question = random.choice(all_questions)
-
+                        never_reviewed = [q for q in all_questions if not engine.has_card(q["prompt"])]
+                        if never_reviewed:
+                            question = random.choice(never_reviewed)
+                            srs_log_msg = f"SRS: Selected random never-reviewed question '{question['prompt']}'"
+                        else:
+                            srs_log_msg = "SRS: All questions are busy and have been reviewed. No question selected."
+                            response_data = {
+                                "jsonrpc": "2.0",
+                                "result": None,
+                                "error": {
+                                    "code": 429,
+                                    "message": "All questions are in cooldown. Please wait before reviewing again."
+                                }
+                            }
+                            # Log SRS action
+                            log_transaction(user, {"method": "getNextQuestion"}, {"srs": srs_log_msg})
+                            return jsonify(response_data)
                 response_data = {
                     "jsonrpc": "2.0",
                     "result": question,
                     "id": req_id
                 }
+                # Log SRS action
+                if srs_log_msg:
+                    log_transaction(user, {"method": "getNextQuestion"}, {"srs": srs_log_msg})
             
 
             elif method == "provideAnswer":
