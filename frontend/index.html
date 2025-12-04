@@ -28,6 +28,7 @@
           console.log('Initializing...');
 
           let currentQuestionPrompt = '';
+          let answerProvided = false;
 
           const fetchNextQuestion = async () => {
             console.log('Fetching question from /api...');
@@ -56,6 +57,7 @@
             }
             
             currentQuestionPrompt = data.result.prompt;
+            answerProvided = false;
             return await makeQuestion(data.result.prompt, data.result.answers);
           };
 
@@ -80,6 +82,12 @@
           };
 
           const provideAnswer = async (detail) => {
+            if (answerProvided) {
+                console.log('Answer already provided for this question. Skipping.');
+                return;
+            }
+            answerProvided = true;
+
             const {score, finalSkeleton, wrongAttempts, correctAttempts, englishHints} = detail;
             try {
                 await fetch('/api', {
