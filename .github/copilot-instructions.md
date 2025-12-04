@@ -4,9 +4,14 @@ This repository contains a full-stack web application for a Kana learning game. 
 
 ## Project Structure
 
-- **Root**: `/workspaces/kana-game`
+- **Root**: `/workspaces/kana-game` (or `$CODESPACE_VSCODE_FOLDER`)
 - **Backend**: `backend/`
 - **Frontend**: `frontend/`
+
+**CRITICAL**: When running terminal commands or referencing files, ALWAYS be aware of the current working directory.
+- Use `$CODESPACE_VSCODE_FOLDER` as the anchor for the project root.
+- When asked to run commands, explicitly `cd` into the correct directory (e.g., `cd $CODESPACE_VSCODE_FOLDER/frontend`) or use absolute paths.
+- Do not assume the terminal is in the root directory.
 
 ## Backend (`backend/`)
 
@@ -29,6 +34,7 @@ This repository contains a full-stack web application for a Kana learning game. 
 - **Entry Point**: `index.html` acts as the main entry, importing `src/main.js`.
 - **Configuration**: `vite.config.js` sets up a proxy for `/api` to forward requests to `http://127.0.0.1:8080`.
 - **Running**: Run `npm run dev` to start the development server.
+- **Testing**: Playwright is used for end-to-end testing. Tests are located in `frontend/tests/`.
 
 ## Development Workflow
 
@@ -43,6 +49,15 @@ This repository contains a full-stack web application for a Kana learning game. 
     npm run dev
     ```
 3.  **Access**: Open the URL provided by Vite (usually localhost with a random port).
+4.  **Run Tests**:
+    ```bash
+    cd frontend
+    npx playwright test
+    ```
+
+## CI/CD
+
+- **Canary Build**: `.github/workflows/canary.yml` runs on push/PR to `main`. It builds the frontend and runs integration tests (Playwright) against a running backend.
 
 ## Key Considerations
 

@@ -40,3 +40,44 @@ jobs:
       run: npm ci
     - name: Build
       run: npm run build
+
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    # Backend Setup
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    - name: Install Backend Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+    - name: Start Backend
+      run: |
+        cd backend
+        python app.py &
+        # Wait for port 8080 to be ready
+        timeout 30s bash -c 'until curl -s http://localhost:8080/health > /dev/null; do sleep 1; done'
+        echo "Backend is ready"
+
+    # Frontend Setup
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    - name: Install Frontend Dependencies
+      working-directory: ./frontend
+      run: npm ci
+    - name: Install Playwright Browsers
+      working-directory: ./frontend
+      run: npx playwright install --with-deps
+      
+    # Run Tests
+    - name: Run Playwright Tests
+      working-directory: ./frontend
+      run: npx playwright test
