@@ -106,6 +106,7 @@ def json_rpc():
                 "id": req_id
             })
         
+
         if method == "provideAnswer":
             # Expecting params to be a dict or list, but let's handle dict for named params
             # or just log whatever we get
@@ -115,9 +116,9 @@ def json_rpc():
                 question_prompt = params.get("question")
                 score = params.get("score")
                 
-                if question_prompt and score is not None:
-                    if score == -1:
-                        print(f"Skipping SRS record for '{question_prompt}' (score: -1)")
+                if question_prompt:
+                    if score is None or score == -1:
+                        print(f"Skipping SRS record for '{question_prompt}' (score: {score})")
                         try:
                             engine.bury_card(question_prompt, 15)
                             print(f"Buried card '{question_prompt}' for 15 minutes")

@@ -55,6 +55,7 @@
     - "あなたは映画が好きですか。"
     - "映画好きですか。"
     - "映画って好き？"
+    - '映画が好きですか。'
 
 - prompt: "What kind of music[おんがく] do you listen[きく] to?"
   answers:
@@ -63,12 +64,12 @@
     - "普段どんな音楽を聴いてる？"
     - "よく聴く音楽は何？"
 
-- prompt: "Have you been[いく] to Japan[にほん]?"
+- prompt: "Have you been[いく] to the United States[アメリカ]?"
   answers:
-    - "日本に行ったことがありますか。"
-    - "日本に行ったことある。"
-    - "日本へ行ったことはありますか。"
-    - "日本に行ったことある？"
+    - "アメリカに行ったことがありますか。"
+    - "アメリカに行ったことある。"
+    - "アメリカへ行ったことはありますか。"
+    - "アメリカに行ったことある？"
 
 - prompt: "What is your favorite[すき] food[たべもの]?"
   answers:
