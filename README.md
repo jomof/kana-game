@@ -21,6 +21,14 @@ A web-based game for learning Japanese Kana and grammar.
 
 The backend is a Flask application that serves the game data.
 
+You can start the backend using the helper script in the root directory:
+
+```bash
+./backend.sh
+```
+
+Alternatively, you can set it up manually:
+
 1.  Navigate to the backend directory:
     ```bash
     cd backend
@@ -47,9 +55,18 @@ The backend is a Flask application that serves the game data.
 
 The frontend is built with Vite.
 
+You can start the frontend using the helper script in the root directory:
+
+```bash
+./frontend.sh
+```
+
+Alternatively, you can set it up manually:
+
 1.  Navigate to the frontend directory:
     ```bash
     cd frontend
+
     ```
 
 2.  Install dependencies:

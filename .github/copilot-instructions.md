@@ -18,7 +18,7 @@ This repository contains a full-stack web application for a Kana learning game. 
 - **Framework**: Python Flask.
 - **Entry Point**: `app.py`.
 - **Dependencies**: Managed via `requirements.txt`. Install with `pip install -r requirements.txt`.
-- **Running**: Run `python app.py`. The server listens on port `8080`.
+- **Running**: Run `./backend.sh` from the root, or `python app.py` from `backend/` (after activating venv). The server listens on port `8080`.
 - **API**:
   - The backend exposes a JSON-RPC 2.0 endpoint at `/api`.
   - **Methods**:
@@ -40,13 +40,11 @@ This repository contains a full-stack web application for a Kana learning game. 
 
 1.  **Start Backend**:
     ```bash
-    cd backend
-    python app.py
+    ./backend.sh
     ```
 2.  **Start Frontend**:
     ```bash
-    cd frontend
-    npm run dev
+    ./frontend.sh
     ```
 3.  **Access**: Open the URL provided by Vite (usually localhost with a random port).
 4.  **Run Tests**:

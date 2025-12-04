@@ -4,12 +4,26 @@ This is a Python Flask application that serves a JSON-RPC API for the Kana Game.
 
 ## Setup
 
+You can use the `backend.sh` script in the root directory to automate setup and running:
+
+```bash
+../backend.sh
+```
+
+Or manually:
+
 1.  Navigate to the `backend` directory:
     ```bash
     cd backend
     ```
 
-2.  Install dependencies:
+2.  Create and activate a virtual environment:
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+
+3.  Install dependencies:
     ```bash
     pip install -r requirements.txt
     ```

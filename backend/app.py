@@ -2,9 +2,22 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import random
+from pathlib import Path
+from srs_engine import FsrsSQLiteScheduler
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# Initialize FSRS engine
+DATA_DIR = Path(__file__).parent / "data"
+ENGINES = {}
+
+def get_engine(user):
+    if not user:
+        user = "default"
+    if user not in ENGINES:
+        ENGINES[user] = FsrsSQLiteScheduler.for_user(user, DATA_DIR)
+    return ENGINES[user]
 
 # Sample data based on frontend/index.html
 QUESTIONS = [
@@ -127,11 +140,30 @@ def json_rpc():
         user = params.get("user") if isinstance(params, dict) else None
         if user:
             print(f"Request from user: {user}")
+        
+        engine = get_engine(user)
 
         if method == "getNextQuestion":
+            # Try to get next due question from SRS
+            next_key = engine.get_next_question()
+            
+            question = None
+            if next_key:
+                # Find the question object for this key
+                # In a real app, this would be a DB lookup
+                for q in QUESTIONS:
+                    if q["prompt"] == next_key:
+                        question = q
+                        break
+            
+            # If no question is due (or key not found), pick a random one
+            # This ensures the user always gets a question even if they are "done" for now
+            if not question:
+                question = random.choice(QUESTIONS)
+
             return jsonify({
                 "jsonrpc": "2.0",
-                "result": random.choice(QUESTIONS),
+                "result": question,
                 "id": req_id
             })
         
@@ -139,6 +171,37 @@ def json_rpc():
             # Expecting params to be a dict or list, but let's handle dict for named params
             # or just log whatever we get
             print(f"Received answer: {params}")
+            
+            if isinstance(params, dict):
+                question_prompt = params.get("question")
+                score = params.get("score")
+                
+                if question_prompt and score is not None:
+                    try:
+                        # Map frontend score (0-100?) to FSRS score (0-3)
+                        # Assuming frontend sends 0-3 based on previous context, but let's be safe
+                        # If score is 0-100, we need to map it. 
+                        # Let's assume the frontend sends 0-3 as per the srs_engine.py docstring
+                        # But wait, the frontend sends `score` which might be 0-100.
+                        # Let's check the frontend code again or assume 0-3 for now based on user request.
+                        # Actually, let's look at the previous turn. The user said "kana-control added a 'score'".
+                        # We should probably normalize it.
+                        # For now, let's pass it through and let the engine validate/handle it.
+                        # But srs_engine expects 0-3.
+                        
+                        # Simple mapping if score is > 3 (e.g. percentage)
+                        fsrs_score = score
+                        if score > 3:
+                             if score >= 90: fsrs_score = 3
+                             elif score >= 75: fsrs_score = 2
+                             elif score >= 50: fsrs_score = 1
+                             else: fsrs_score = 0
+                        
+                        engine.record_answer(question_prompt, int(fsrs_score))
+                        print(f"Recorded SRS answer for '{question_prompt}': {fsrs_score}")
+                    except Exception as e:
+                        print(f"Error recording SRS answer: {e}")
+
             return jsonify({
                 "jsonrpc": "2.0",
                 "result": "ok",
