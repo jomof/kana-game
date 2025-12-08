@@ -3,7 +3,7 @@ import json
 import tempfile
 import shutil
 from pathlib import Path
-from app import app, DATA_DIR, ENGINES, get_engine
+from app import app, DATA_DIR, get_engine
 
 class TestApi(unittest.TestCase):
     def setUp(self):
@@ -20,11 +20,6 @@ class TestApi(unittest.TestCase):
         
     def tearDown(self):
         # Clean up the user's DB
-        engine = ENGINES.get(self.user)
-        if engine:
-            engine.close()
-            del ENGINES[self.user]
-        
         db_path = DATA_DIR / f"{self.user}.db"
         if db_path.exists():
             db_path.unlink()
