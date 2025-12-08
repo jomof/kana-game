@@ -170,16 +170,9 @@ def json_rpc():
                                 print(f"Error burying card: {e}")
                         else:
                             try:
-                                # Map frontend score (0-100?) to FSRS score (0-3)
-                                fsrs_score = score
-                                if score > 3:
-                                    if score >= 90: fsrs_score = 3
-                                    elif score >= 75: fsrs_score = 2
-                                    elif score >= 50: fsrs_score = 1
-                                    else: fsrs_score = 0
-                                
-                                engine.record_answer(question_prompt, int(fsrs_score))
-                                print(f"Recorded SRS answer for '{question_prompt}': {fsrs_score}")
+                                # Pass score directly (0-100) to the SRS engine
+                                engine.record_answer(question_prompt, int(score))
+                                print(f"Recorded SRS answer for '{question_prompt}': {score}")
                             except Exception as e:
                                 print(f"Error recording SRS answer: {e}")
 

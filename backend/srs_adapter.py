@@ -168,29 +168,14 @@ class FsrsSQLiteScheduler:
 
     def record_answer(self, key: str, score: int) -> None:
         """
-        Update SRS state for the given question key based on a 0-3 score.
-
-        score mapping (0-3 to 0-100):
-            0 (Again) -> 0
-            1 (Hard)  -> 40
-            2 (Good)  -> 70
-            3 (Easy)  -> 100
+        Update SRS state for the given question key based on a 0-100 correctness score.
 
         Args:
             key: Question key
-            score: Score from 0-3
+            score: Correctness score from 0-100
         """
-        if score not in [0, 1, 2, 3]:
-            raise ValueError(f"Invalid score {score}, expected 0..3")
+        if not 0 <= score <= 100:
+            raise ValueError(f"Invalid score {score}, expected 0-100")
 
-        # Map 0-3 scores to 0-100 percentile scores for srsdb
-        score_map = {
-            0: 0,    # Again
-            1: 40,   # Hard
-            2: 70,   # Good
-            3: 100,  # Easy
-        }
-
-        correctness = score_map[score]
         now = utc_now()
-        self._get_db().answer(now, key, correct=correctness)
+        self._get_db().answer(now, key, correct=score)
