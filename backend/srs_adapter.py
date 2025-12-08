@@ -66,13 +66,6 @@ class FsrsSQLiteScheduler:
         db_path = base_dir / f"{user_id}.db"
         return cls(db_path)
 
-    def close(self) -> None:
-        """
-        Close the underlying database connection.
-        """
-        # srsdb handles connection management internally
-        pass
-
     def has_card(self, key: str) -> bool:
         """
         Check if a card with the given key exists in the database.

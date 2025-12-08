@@ -2,8 +2,7 @@ import unittest
 import tempfile
 import shutil
 from pathlib import Path
-from datetime import datetime, timedelta, timezone
-from srs_adapter import FsrsSQLiteScheduler, utc_now
+from srs_adapter import FsrsSQLiteScheduler
 
 class TestFsrsSQLiteScheduler(unittest.TestCase):
     def setUp(self):
@@ -12,7 +11,6 @@ class TestFsrsSQLiteScheduler(unittest.TestCase):
         self.engine = FsrsSQLiteScheduler(self.db_path)
 
     def tearDown(self):
-        self.engine.close()
         shutil.rmtree(self.test_dir)
 
     def test_bury_card_defers_for_15_minutes(self):

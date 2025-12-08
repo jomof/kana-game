@@ -163,18 +163,12 @@ def json_rpc():
                     if question_prompt:
                         if score is None or score == -1:
                             print(f"Skipping SRS record for '{question_prompt}' (score: {score})")
-                            try:
-                                engine.bury_card(question_prompt, 15)
-                                print(f"Buried card '{question_prompt}' for 15 minutes")
-                            except Exception as e:
-                                print(f"Error burying card: {e}")
+                            engine.bury_card(question_prompt, 15)
+                            print(f"Buried card '{question_prompt}' for 15 minutes")
                         else:
-                            try:
-                                # Pass score directly (0-100) to the SRS engine
-                                engine.record_answer(question_prompt, int(score))
-                                print(f"Recorded SRS answer for '{question_prompt}': {score}")
-                            except Exception as e:
-                                print(f"Error recording SRS answer: {e}")
+                            # Pass score directly (0-100) to the SRS engine
+                            engine.record_answer(question_prompt, int(score))
+                            print(f"Recorded SRS answer for '{question_prompt}': {score}")
 
                 response_data = {
                     "jsonrpc": "2.0",
