@@ -76,17 +76,10 @@ class FsrsSQLiteScheduler:
         Returns:
             True if the card exists, False otherwise
         """
-        # Check if the card has been reviewed by trying to get next cards
-        # This is a simple implementation - srsdb will create cards on first answer
-        # We can check if there's any review history by seeing if next() ever returns it
-        # For now, we'll use a database query approach
-        import sqlite3
-        conn = sqlite3.connect(str(self.db_path))
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1 FROM fsrs_cards WHERE question_key = ? LIMIT 1", (key,))
-        exists = cursor.fetchone() is not None
-        conn.close()
-        return exists
+        # Use next_due_date with the question parameter to check if card exists
+        # Returns None if the card doesn't exist
+        due_date = self._get_db().next_due_date(question=key)
+        return due_date is not None
 
     def get_next_question(self) -> Optional[str]:
         """
@@ -116,48 +109,6 @@ class FsrsSQLiteScheduler:
         now = utc_now()
         # Record a neutral score (50) to push the card back without marking it wrong
         self._get_db().answer(now, key, correct=50)
-
-    def is_busy(self, key: str, minutes: int = 15) -> bool:
-        """
-        Check if the card was updated within the last `minutes`.
-
-        Args:
-            key: Question key to check
-            minutes: Time window in minutes
-
-        Returns:
-            True if the card was recently updated
-        """
-        import sqlite3
-        conn = sqlite3.connect(str(self.db_path))
-        cursor = conn.cursor()
-
-        # Check the most recent review time from the fsrs_reviews table
-        cursor.execute(
-            """
-            SELECT MAX(review_time) as last_review
-            FROM fsrs_reviews
-            WHERE question_key = ?
-            """,
-            (key,)
-        )
-        result = cursor.fetchone()
-        conn.close()
-
-        if result is None or result[0] is None:
-            return False
-
-        last_review_str = result[0]
-        # Parse the datetime string
-        try:
-            last_review = datetime.fromisoformat(last_review_str.replace('Z', '+00:00'))
-            if last_review.tzinfo is None:
-                last_review = last_review.replace(tzinfo=timezone.utc)
-
-            cutoff = utc_now() - timedelta(minutes=minutes)
-            return last_review > cutoff
-        except (ValueError, AttributeError):
-            return False
 
     def record_answer(self, key: str, score: int) -> None:
         """

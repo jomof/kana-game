@@ -119,28 +119,16 @@ def json_rpc():
                             srs_log_msg = f"SRS: Selected never-reviewed question '{q['prompt']}'"
                             break
                 if not question and all_questions:
-                    candidates = [q for q in all_questions if not engine.is_busy(q["prompt"], 15)]
-                    if candidates:
-                        question = random.choice(candidates)
-                        srs_log_msg = f"SRS: Selected random non-busy question '{question['prompt']}'"
+                    # If no due questions, pick a random never-reviewed question
+                    never_reviewed = [q for q in all_questions if not engine.has_card(q["prompt"])]
+                    if never_reviewed:
+                        question = random.choice(never_reviewed)
+                        srs_log_msg = f"SRS: Selected random never-reviewed question '{question['prompt']}'"
                     else:
-                        never_reviewed = [q for q in all_questions if not engine.has_card(q["prompt"])]
-                        if never_reviewed:
-                            question = random.choice(never_reviewed)
-                            srs_log_msg = f"SRS: Selected random never-reviewed question '{question['prompt']}'"
-                        else:
-                            srs_log_msg = "SRS: All questions are busy and have been reviewed. No question selected."
-                            response_data = {
-                                "jsonrpc": "2.0",
-                                "result": None,
-                                "error": {
-                                    "code": 429,
-                                    "message": "All questions are in cooldown. Please wait before reviewing again."
-                                }
-                            }
-                            # Log SRS action
-                            log_transaction(user, {"method": "getNextQuestion"}, {"srs": srs_log_msg})
-                            return jsonify(response_data)
+                        # All questions have been reviewed and none are due
+                        # Just pick a random one and let FSRS handle the scheduling
+                        question = random.choice(all_questions)
+                        srs_log_msg = f"SRS: All questions reviewed, selected random question '{question['prompt']}'"
                 response_data = {
                     "jsonrpc": "2.0",
                     "result": question,

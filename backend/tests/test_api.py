@@ -48,13 +48,13 @@ class TestApi(unittest.TestCase):
             },
             "id": 2
         })
-        
-        # 3. Check if the card is busy
+
+        # 3. Verify the card was buried (exists in the database)
         engine = get_engine(self.user)
-        is_busy = engine.is_busy(prompt)
-        
-        # Current behavior: It should NOT be busy because score=None is ignored
-        self.assertTrue(is_busy, "Card SHOULD be busy if score is None (fix required)")
+        has_card = engine.has_card(prompt)
+
+        # The card should exist because bury_card creates it
+        self.assertTrue(has_card, "Card should exist after being buried")
 
 if __name__ == '__main__':
     unittest.main()
