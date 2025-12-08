@@ -5,7 +5,7 @@ import random
 import yaml
 import glob
 from pathlib import Path
-from srs_engine import FsrsSQLiteScheduler
+from srs_adapter import FsrsSQLiteScheduler
 import json
 import datetime
 
@@ -14,14 +14,13 @@ CORS(app)  # Enable CORS for all routes
 
 # Initialize FSRS engine
 DATA_DIR = Path(__file__).parent / "data"
-ENGINES = {}
 
 def log_transaction(user, request_data, response_data):
     if not user:
         user = "default"
-    
+
     log_file = DATA_DIR / f"{user}.log"
-    
+
     timestamp = datetime.datetime.now().isoformat()
     try:
         with open(log_file, "a", encoding="utf-8") as f:
@@ -31,11 +30,10 @@ def log_transaction(user, request_data, response_data):
         print(f"Failed to log transaction: {e}")
 
 def get_engine(user):
+    """Create a new engine instance for each request to avoid thread issues."""
     if not user:
         user = "default"
-    if user not in ENGINES:
-        ENGINES[user] = FsrsSQLiteScheduler.for_user(user, DATA_DIR)
-    return ENGINES[user]
+    return FsrsSQLiteScheduler.for_user(user, DATA_DIR)
 
 QUESTIONS_CACHE = {
     'timestamp': 0,
