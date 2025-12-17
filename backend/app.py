@@ -9,13 +9,17 @@ from srs_adapter import FsrsSQLiteScheduler
 import json
 import datetime
 
+import kotogram
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
 
 # Initialize FSRS engine
 DATA_DIR = Path(__file__).parent / "data"
 
 def log_transaction(user, request_data, response_data):
+
     if not user:
         user = "default"
 
@@ -46,7 +50,10 @@ def get_questions():
     sentences_dir.mkdir(parents=True, exist_ok=True)
     
     files = sorted(glob.glob(str(sentences_dir / "*.yml")) + glob.glob(str(sentences_dir / "*.yaml")))
+
+
     if not files:
+
         return []
 
     # Get the latest modification time
@@ -61,17 +68,38 @@ def get_questions():
                     data = yaml.safe_load(stream)
                     if data:
                         if isinstance(data, list):
+                            for item in data:
+                                prompt = item.get('prompt')
+                                answers = item.get('answers', [])
+                                if prompt and answers:
+                                    cleaned_answers = [ans.replace('{', '').replace('}', '') for ans in answers]
+                                    original_answers = set(cleaned_answers)
+                                    cleaned_answers = kotogram.augment(cleaned_answers)
+                                    augmented_answers = set(cleaned_answers)
+                                    added = list(augmented_answers - original_answers)
+                                    removed = list(original_answers - augmented_answers)
+                                    if added or removed:
+                                        print(f"AUGMENT: prompt='{prompt}' added={added} removed={removed}")
+                                    item['answers'] = cleaned_answers
                             questions.extend(data)
                         elif isinstance(data, dict) and 'examples' in data:
                             for ex in data['examples']:
                                 prompt = ex.get('english')
                                 japanese_answers = ex.get('japanese', [])
                                 cleaned_answers = [ans.replace('{', '').replace('}', '') for ans in japanese_answers]
+                                original_answers = set(cleaned_answers)
+                                cleaned_answers = kotogram.augment(cleaned_answers)
+                                augmented_answers = set(cleaned_answers)
+                                added = list(augmented_answers - original_answers)
+                                removed = list(original_answers - augmented_answers)
+                                if added or removed:
+                                    print(f"AUGMENT: prompt='{prompt}' added={added} removed={removed}")
                                 if prompt and cleaned_answers:
                                     questions.append({
                                         "prompt": prompt,
                                         "answers": cleaned_answers
                                     })
+
                 except yaml.YAMLError as exc:
                     print(exc)
         QUESTIONS_CACHE['timestamp'] = max_mtime
@@ -158,6 +186,16 @@ def json_rpc():
                             engine.record_answer(question_prompt, int(score))
                             print(f"Recorded SRS answer for '{question_prompt}': {score}")
 
+                response_data = {
+                    "jsonrpc": "2.0",
+                    "result": "ok",
+                    "id": req_id
+                }
+
+            elif method == "log":
+                level = params.get("level", "INFO")
+                message = params.get("message", "")
+                log_transaction(user, {"method": "log", "level": level}, {"message": message})
                 response_data = {
                     "jsonrpc": "2.0",
                     "result": "ok",

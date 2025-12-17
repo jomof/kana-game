@@ -1,163 +1,166 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>&lt;kana-control> Demo</title>
-    <script src="/node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
-    <script src="/node_modules/lit/polyfill-support.js"></script>
-    <script type="module" src="/src/main.js"></script>
-    <link rel="stylesheet" href="./style.css" />
-  </head>
-  <body>
-    <script type="module">
-      document.addEventListener('readystatechange', () =>
-        console.log('readystatechange:', document.readyState)
-      );
 
-      import {makeQuestion} from 'kana-control';
+<head>
+  <meta charset="utf-8" />
+  <title>&lt;kana-control> Demo</title>
+  <script type="module" src="/src/logger.js"></script>
+  <script src="/node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="/node_modules/lit/polyfill-support.js"></script>
+  <script type="module" src="/src/main.js"></script>
+  <link rel="stylesheet" href="./style.css" />
+</head>
 
-      // Wait for DOM to be ready
-      window.addEventListener('DOMContentLoaded', async () => {
-        const control = document.querySelector('kana-control');
-        if (!control) {
-          console.error('kana-control element not found!');
-          return;
-        }
+<body>
+  <script type="module">
+    document.addEventListener('readystatechange', () =>
+      console.log('readystatechange:', document.readyState)
+    );
 
-        try {
-          console.log('Initializing...');
+    import { makeQuestion } from 'kana-control';
 
-          let currentQuestionPrompt = '';
-          let answerProvided = false;
+    // Wait for DOM to be ready
+    window.addEventListener('DOMContentLoaded', async () => {
+      const control = document.querySelector('kana-control');
+      if (!control) {
+        console.error('kana-control element not found!');
+        return;
+      }
 
-          const fetchNextQuestion = async () => {
-            console.log('Fetching question from /api...');
-            const response = await fetch('/api', {
+      try {
+        console.log('Initializing...');
+
+        let currentQuestionPrompt = '';
+        let answerProvided = false;
+
+        const fetchNextQuestion = async () => {
+          console.log('Fetching question from /api...');
+          const response = await fetch('/api', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              method: 'getNextQuestion',
+              params: {
+                user: 'jomof'
+              },
+              id: Date.now()
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (data.error) {
+            throw new Error(`JSON-RPC error: ${data.error.message}`);
+          }
+
+          currentQuestionPrompt = data.result.prompt;
+          answerProvided = false;
+          return await makeQuestion(data.result.prompt, data.result.answers);
+        };
+
+        // Load first question
+        console.log('Loading first question...');
+        const firstQuestion = await fetchNextQuestion();
+        await control.supplyQuestion(firstQuestion);
+        console.log('First question loaded. Ready.');
+
+        // Enable debug mode
+        control.debug = false;
+
+        const advanceQuestion = async () => {
+          console.log('Loading next question...');
+          try {
+            const nextQ = await fetchNextQuestion();
+            await control.supplyQuestion(nextQ);
+            console.log('Next question loaded.');
+          } catch (e) {
+            console.error("Error fetching next question", e);
+          }
+        };
+
+        const provideAnswer = async (detail) => {
+          if (answerProvided) {
+            console.log('Answer already provided for this question. Skipping.');
+            return;
+          }
+          answerProvided = true;
+
+          const { score, finalSkeleton, wrongAttempts, correctAttempts, englishHints } = detail;
+          try {
+            await fetch('/api', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
                 jsonrpc: '2.0',
-                method: 'getNextQuestion',
+                method: 'provideAnswer',
                 params: {
-                  user: 'jomof'
+                  user: 'jomof',
+                  question: currentQuestionPrompt,
+                  score,
+                  finalSkeleton,
+                  wrongAttempts,
+                  correctAttempts,
+                  englishHints
                 },
                 id: Date.now()
               })
             });
+            console.log('Answer provided to server');
+          } catch (e) {
+            console.error('Error providing answer:', e);
+          }
+        };
 
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
+        control.addEventListener('question-complete', (e) => {
+          const { score, finalSkeleton, wrongAttempts, correctAttempts } = e.detail;
+          console.log('Question completed!');
+          console.log(`  score (number): ${score}`);
+          console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
+          console.log(`  wrongAttempts (number): ${wrongAttempts}`);
+          console.log('  correctAttempts (string[]):', correctAttempts);
+          provideAnswer(e.detail);
+        });
 
-            const data = await response.json();
-            if (data.error) {
-              throw new Error(`JSON-RPC error: ${data.error.message}`);
-            }
-            
-            currentQuestionPrompt = data.result.prompt;
-            answerProvided = false;
-            return await makeQuestion(data.result.prompt, data.result.answers);
-          };
-
-          // Load first question
-          console.log('Loading first question...');
-          const firstQuestion = await fetchNextQuestion();
-          await control.supplyQuestion(firstQuestion);
-          console.log('First question loaded. Ready.');
-          
-          // Enable debug mode
-          control.debug = false;
-
-          const advanceQuestion = async () => {
-            console.log('Loading next question...');
-            try {
-                const nextQ = await fetchNextQuestion();
-                await control.supplyQuestion(nextQ);
-                console.log('Next question loaded.');
-            } catch (e) {
-                console.error("Error fetching next question", e);
-            }
-          };
-
-          const provideAnswer = async (detail) => {
-            if (answerProvided) {
-                console.log('Answer already provided for this question. Skipping.');
-                return;
-            }
-            answerProvided = true;
-
-            const {score, finalSkeleton, wrongAttempts, correctAttempts, englishHints} = detail;
-            try {
-                await fetch('/api', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        jsonrpc: '2.0',
-                        method: 'provideAnswer',
-                        params: {
-                            user: 'jomof',
-                            question: currentQuestionPrompt,
-                            score,
-                            finalSkeleton,
-                            wrongAttempts,
-                            correctAttempts,
-                            englishHints
-                        },
-                        id: Date.now()
-                    })
-                });
-                console.log('Answer provided to server');
-            } catch (e) {
-                console.error('Error providing answer:', e);
-            }
-          };
-
-          control.addEventListener('question-complete', (e) => {
-            const {score, finalSkeleton, wrongAttempts, correctAttempts} = e.detail;
-            console.log('Question completed!');
-            console.log(`  score (number): ${score}`);
-            console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
-            console.log(`  wrongAttempts (number): ${wrongAttempts}`);
-            console.log('  correctAttempts (string[]):', correctAttempts);
-            provideAnswer(e.detail);
-          });
-
-          control.addEventListener('question-skipped', (e) => {
-            const {score, finalSkeleton, wrongAttempts, correctAttempts} = e.detail;
-            console.log('Question skipped!');
-            console.log(`  score (number): ${score}`);
-            console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
-            console.log(`  wrongAttempts (number): ${wrongAttempts}`);
-            console.log('  correctAttempts (string[]):', correctAttempts);
-            (async () => {
-              await provideAnswer(e.detail);
-              // After answer is provided, request next question
-              advanceQuestion();
-            })();
-          });
-          
-          // Listen for request-next-question event from the component
-          control.addEventListener('request-next-question', () => {
-            console.log('Received request-next-question event');
+        control.addEventListener('question-skipped', (e) => {
+          const { score, finalSkeleton, wrongAttempts, correctAttempts } = e.detail;
+          console.log('Question skipped!');
+          console.log(`  score (number): ${score}`);
+          console.log(`  finalSkeleton (string): "${finalSkeleton}"`);
+          console.log(`  wrongAttempts (number): ${wrongAttempts}`);
+          console.log('  correctAttempts (string[]):', correctAttempts);
+          (async () => {
+            await provideAnswer(e.detail);
+            // After answer is provided, request next question
             advanceQuestion();
-          });
+          })();
+        });
 
-          console.log('Questions loaded. Click words with furigana to toggle pronunciation hints!');
-        } catch (error) {
-          console.error('Failed to create questions:', error);
-        }
-      });
-    </script>
-    
-    <div class="demo">
-      <kana-control></kana-control>
-    </div>
+        // Listen for request-next-question event from the component
+        control.addEventListener('request-next-question', () => {
+          console.log('Received request-next-question event');
+          advanceQuestion();
+        });
+
+      } catch (error) {
+        console.error('Failed to create questions:', error);
+      }
+    });
+  </script>
+
+  <div class="demo">
+    <kana-control></kana-control>
+  </div>
 
 
-    <pre id="debug" hidden></pre>
-  </body>
+  <pre id="debug" hidden></pre>
+</body>
+
 </html>
