@@ -1,166 +1,399 @@
 - prompt: "I live[すむ] in Seattle[シアトル]."
   answers:
+    # Neutral / polite
     - "私はシアトルに住んでいます。"
-    - "私はシアトルに住んでる。"
     - "シアトルに住んでいます。"
+    # Casual / natural
+    - "私はシアトルに住んでる。"
+    - "シアトルに住んでる。"
+    # Soft / conversational
     - "シアトルに住んでるよ。"
+    - "今はシアトルに住んでるよ。"
+    # Slightly more grown-up / composed
+    - "現在、シアトルに住んでいます。"
+    - "拠点はシアトルです。"
 
 - prompt: "I am a student[がくせい]."
   answers:
+    # Neutral / polite
     - "私は学生です。"
     - "学生です。"
-    - "僕は学生です。"   # masculine
-    - "私は学生なんです。"
+    # Casual / natural
+    - "僕は学生です。"
+    - "学生やってます。"
+    # Soft / conversational
+    - "実は、学生なんです。"
+    - "学生なんですよ。"
+    # Slightly more grown-up / composed
+    - "今は学生をしています。"
+    - "現在、学生です。"
 
 - prompt: "I am a teacher[せんせい]."
   answers:
+    # Neutral / polite
     - "私は先生です。"
     - "先生です。"
-    - "僕は先生です。"   # masculine
-    - "私は先生なんです。"
+    # Casual / natural
+    - "僕は先生です。"
+    - "先生やってます。"
+    # Soft / conversational
+    - "実は、先生なんです。"
+    - "先生なんですよ。"
+    # Slightly more grown-up / composed
+    - "職業は教師です。"
+    - "教える仕事をしています。"
 
 - prompt: "I eat[たべる] sushi[すし] every[まい] day[にち]."
   answers:
+    # Neutral / polite
     - "私は毎日寿司を食べます。"
-    - "私は毎日寿司を食べる。"
     - "毎日寿司を食べます。"
+    # Casual / natural
+    - "私は毎日寿司を食べる。"
+    - "毎日寿司食べてる。"
+    # Soft / conversational
     - "毎日寿司を食べてるよ。"
+    - "ほぼ毎日、寿司食べてる。"
+    # Slightly more grown-up / composed
+    - "普段は毎日のように寿司を食べています。"
+    - "寿司はほぼ毎日食べていますね。"
+
+- prompt: "I can't speak[はなす] Japanese[にほんご]."
+  answers:
+    # Neutral / polite
+    - "私は日本語を話すことができません。"
+    - "日本語は話せません。"
+    # Casual / natural
+    - "日本語は話せない。"
+    - "日本語、話せないんだ。"
+    # Soft / conversational
+    - "日本語はまだ話せないです。"
+    - "日本語、あまり話せなくて。"
+    # Slightly more grown-up / composed
+    - "残念ですが、日本語は話せません。"
+    - "日本語は勉強中で、まだ話せないんです。"
 
 - prompt: "I can speak[はなす] Japanese[にほんご]."
   answers:
+    # Neutral / polite
     - "私は日本語を話すことができます。"
-    - "私は日本語を話すことができる。"
     - "私は日本語が話せます。"
+    # Casual / natural
+    - "私は日本語を話すことができる。"
     - "私は日本語が話せる。"
+    # Soft / conversational
     - "日本語は話せますよ。"
     - "日本語なら話せます。"
+    # Slightly more grown-up / composed
+    - "簡単な日本語なら話せます。"
+    - "日本語で少しお話しできます。"
 
-- prompt: "What is your hobby[しゅみ]?"
+- prompt: "Do you have any hobbies[しゅみ]?"
   answers:
-    - "あなたの趣味は何ですか。"
-    - "趣味は何ですか。"
-    - "趣味って何？"
-    - "趣味は何なの？"
+    # Neutral / polite
+    - "何かご趣味はありますか。"
+    - "ご趣味は何かありますか？"
+    # Casual / natural
+    - "何か趣味ある？"
+    - "趣味とかあるの？"
+    # Soft / conversational (curious, inviting)
+    - "何かハマってることある？"
+    - "最近、何か趣味とかある？"
+    # Slightly more grown-up / composed
+    - "今、何か楽しんでいる趣味はありますか？"
+    - "差し支えなければ、ご趣味を教えてもらえますか？"
 
-- prompt: "Where are you from[しゅっしん]?"
+- prompt: "Where[どこ] are you from[しゅっしん]?"
   answers:
+    # Neutral / polite
     - "出身はどこですか。"
-    - "あなたの出身はどこですか。"
     - "どこの出身ですか。"
+    - "あなたの出身はどこですか。"
+    # Casual / natural
+    - "どこ出身？"
     - "どこから来たの？"
+    # Soft / conversational
+    - "地元はどこ？"
+    - "どの辺の出身？"
+    # Slightly more grown-up / composed
+    - "ご出身はどちらですか？"
+    - "どちらのご出身ですか？"
 
 - prompt: "Do you like movies[えいが]?"
   answers:
+    # Neutral / polite
     - "映画は好きですか。"
+    - "映画が好きですか。"
     - "あなたは映画が好きですか。"
+    # Casual / natural
     - "映画好きですか。"
     - "映画って好き？"
-    - '映画が好きですか。'
+    # Soft / conversational
+    - "映画とか、好き？"
+    - "映画、よく観る？"
+    # Slightly more grown-up / composed
+    - "映画はお好きですか？"
+    - "普段、映画はご覧になりますか？"
 
 - prompt: "What kind of music[おんがく] do you listen[きく] to?"
   answers:
+    # Neutral / polite
     - "どんな音楽を聴きますか。"
+    - "普段はどんな音楽を聴かれますか？"
+    # Casual / natural
     - "どんな音楽を聴くの。"
     - "普段どんな音楽を聴いてる？"
     - "よく聴く音楽は何？"
+    # Soft / conversational
+    - "最近、どんな音楽聴いてる？"
+    - "どんなジャンルの音楽が好き？"
+    # Slightly more grown-up / composed
+    - "普段はどのような音楽を楽しまれていますか？"
+    - "よく聴く音楽の傾向ってありますか？"
 
 - prompt: "Have you been[いく] to the United States[アメリカ]?"
   answers:
+    # Neutral / polite
     - "アメリカに行ったことがありますか。"
-    - "アメリカに行ったことある。"
     - "アメリカへ行ったことはありますか。"
+    # Casual / natural
+    - "アメリカに行ったことある。"
     - "アメリカに行ったことある？"
+    # Soft / conversational
+    - "アメリカって行ったことある？"
+    - "今までアメリカ行ったことある？"
+    # Slightly more grown-up / composed
+    - "これまでにアメリカを訪れたことはありますか？"
+    - "お仕事や旅行で、アメリカに行かれたことはありますか？"
 
 - prompt: "What is your favorite[すき] food[たべもの]?"
   answers:
+    # Neutral / polite
     - "好きな食べ物は何ですか。"
     - "一番好きな食べ物は何ですか。"
+    # Casual / natural
     - "好きな食べ物って何？"
     - "何の食べ物が好き？"
+    # Soft / conversational
+    - "いちばん好きな食べ物って何？"
+    - "普段よく食べる好きなものある？"
+    # Slightly more grown-up / composed
+    - "特にお好きな食べ物は何ですか？"
+    - "好みの食べ物を教えてもらえますか？"
 
 - prompt: "Do you have siblings[きょうだい]?"
   answers:
+    # Neutral / polite
     - "兄弟はいますか。"
+    - "ご兄弟はいらっしゃいますか？"
+    # Casual / natural
     - "兄弟はいるの。"
     - "兄弟いる？"
-    - "兄弟はいますかね？"
+    # Soft / conversational
+    - "兄弟っている？"
+    - "兄弟とかいる？"
+    # Slightly more grown-up / composed
+    - "ご兄弟はいますかね？"
+    - "兄弟姉妹はいらっしゃいますか？"
 
 - prompt: "What do you do[する] on weekends[しゅうまつ]?"
   answers:
+    # Neutral / polite
     - "週末は何をしますか。"
+    - "週末はどのように過ごされていますか。"
+    # Casual / natural
     - "週末は何をするの。"
     - "週末は何してる？"
+    # Soft / conversational
+    - "週末って、何して過ごすことが多い？"
     - "週末は普段どう過ごしてる？"
+    # Slightly more grown-up / composed
+    - "週末はどんなふうに過ごすことが多いですか？"
+    - "週末の過ごし方って、だいたい決まってますか？"
 
 - prompt: "The weather[てんき] is nice[いい] today[きょう]."
   answers:
+    # Neutral / polite
     - "今日はいい天気ですね。"
+    - "今日はとてもいい天気ですね。"
+    # Casual / natural
     - "今日はいい天気だね。"
     - "今日、天気いいね。"
+    # Soft / conversational
+    - "ほんと、今日は天気いいね。"
     - "今日は本当にいい天気だよ。"
+    # Slightly more grown-up / composed
+    - "今日は気持ちのいい天気ですね。"
+    - "今日は過ごしやすい天気ですね。"
 
 - prompt: "Nice to meet you[はじめまして]."
   answers:
+    # Neutral / standard
     - "初めまして。"
     - "初めまして、よろしくお願いします。"
+    # Slightly warmer
     - "初めまして、どうぞよろしく。"
+    - "初めまして。よろしく。"
+    # Casual / natural
+    - "はじめまして。"
+    - "はじめまして、よろしくね。"
+    # More grown-up / composed
+    - "初めまして。本日はありがとうございます。"
+    - "初めまして。お会いできて嬉しいです。"
 
 - prompt: "Do you come[くる] here[ここ] often[よく]?"
   answers:
+    # Neutral / polite
     - "ここにはよく来ますか？"
+    - "こちらにはよく来られますか？"
+    # Casual / natural
     - "ここってよく来るの？"
     - "よくここに来る？"
+    # Soft / conversational
+    - "ここ、よく来る？"
+    - "この辺、よく来るの？"
+    # Slightly more grown-up / composed
+    - "この場所には、普段からよく来られるんですか？"
+    - "こちらには普段からいらっしゃることが多いですか？"
 
 - prompt: "What[なに] do you usually[ふだん] do[する] for fun[たのしみ]?"
   answers:
+    # Neutral / polite
     - "普段は何をして楽しんでいますか？"
+    - "普段はどんなことをして過ごしていますか？"
+    # Casual / natural
     - "普段は何して遊んでるの？"
     - "よく何してる？"
+    # Soft / conversational
+    - "普段、何してることが多い？"
+    - "時間あるとき、何して過ごすことが多い？"
+    # Slightly more grown-up / composed
+    - "普段の楽しみは何ですか？"
+    - "普段はどんなことを楽しみにしていますか？"
 
 - prompt: "Would you like[したい] to get coffee[コーヒー] together[いっしょ] sometime[こんど]?"
   answers:
+    # Neutral / polite
     - "よかったら今度一緒にコーヒーでもどうですか？"
+    - "もしよろしければ、今度ご一緒にコーヒーはいかがですか？"
+    # Casual / natural
     - "今度コーヒー行かない？"
+    - "今度、コーヒーでも行こうよ。"
+    # Soft / conversational
     - "一緒にコーヒーどう？"
+    - "よかったら、一緒にコーヒー飲まない？"
+    # Slightly more grown-up / composed
+    - "今度、時間が合えばコーヒーでもいかがですか？"
+    - "近いうちに、一緒にコーヒーに行けたら嬉しいです。"
 
 - prompt: "What[なに] kind[どんな] of places[ところ] do you like[すき] to visit[いく]?"
   answers:
+    # Neutral / polite
     - "どんな場所に行くのが好きですか？"
+    - "どんなところが好きですか？"
+    # Casual / natural
     - "どんなとこ好き？"
     - "よくどこ行くの？"
+    - "どんなとこが好き？"
+    - "どんな場所が好き？"
+    # Slightly masculine / grounded
+    - "どんな所が好きなんだ？"
+    - "どんな場所に惹かれる？"
+    # Soft / conversational
+    - "どんなとこ、好き？"
+    - "どんなとこが好きなの？"
+    - "どんな感じのとこが好き？"
+    # More grown-up / composed
+    - "どんなところが好きなんですか？"
+    - "どんな場所がお好みですか？"
+    - "どんなところに惹かれますか？"
 
 - prompt: "Are you more of an indoor[インドア] or outdoor[アウトドア] person[ひと]?"
   answers:
+    # Neutral / direct
     - "インドア派ですか？アウトドア派ですか？"
     - "インドア？それともアウトドア？"
+    # Casual / compact
+    - "インドア派？アウトドア派？"
+    - "インドアとアウトドア、どっち派？"
     - "どっちタイプ？"
+    # Softer / conversational
+    - "インドア派？それともアウトドア派？"
+    - "インドア？アウトドア？"
+    # Slightly more grown-up
+    - "普段はインドア派ですか？アウトドア派ですか？"
+    - "インドアとアウトドア、どちらが多いですか？"
 
 - prompt: "What[なに] kind[どんな] of food[たべもの] do you like[すき] on a date[デート]?"
   answers:
+    # Neutral / polite
     - "デートではどんな料理が好きですか？"
+    - "デートでは、どんな食事が好みですか？"
+    # Casual / natural
     - "デートなら何食べたい？"
+    - "デートのとき、何が好き？"
+    # Soft / conversational
     - "好きなデートごはんってある？"
+    - "デートでよく選ぶごはんってある？"
+    # Slightly more adult / composed
+    - "デートの食事は、どんな系が好きですか？"
+    - "デートではどんなものを食べるのが好きですか？"
 
-- prompt: "Do you prefer[すき] quiet[しずか] places[ところ] or lively[にぎやか] places[ところ]?"
+- prompt: "What[なに] kind[どんな] of food[たべもの] do you like[すき] on a date[デート]?"
   answers:
-    - "静かな場所とにぎやかな場所、どちらが好きですか？"
-    - "静かなとこが好き？にぎやかなとこ？"
-    - "どっちの雰囲気が好き？"
+    # Neutral / polite
+    - "デートではどんな料理が好きですか？"
+    # Casual / natural
+    - "デートなら何食べたい？"
+    - "デートのとき、何が好き？"
+    # Soft / conversational
+    - "好きなデートごはんってある？"
+    - "デートでよく選ぶごはんってある？"
+    # Slightly more grown-up
+    - "デートでは、どんな食事が好みですか？"
+    - "デートの食事は、どんな系が好きですか？"
 
 - prompt: "What[なに] was your first[さいしょ] impression[いんしょう] of me[ぼく]?"
   answers:
+    # Neutral / polite
     - "僕の第一印象はどうでしたか？"
+    - "最初の印象はどうでしたか？"
+    # Casual / natural
     - "第一印象どうだった？"
     - "最初どう思った？"
+    # Soft / conversational
+    - "会ったとき、どんな印象だった？"
+    - "最初の感じ、どうだった？"
+    # Slightly more grown-up / composed
+    - "初めて会ったときの印象を教えてもらえますか？"
+    - "最初に会ったとき、どんなふうに感じましたか？"
 
 - prompt: "What[なに] are you looking for[もとめる] in a relationship[かんけい]?"
   answers:
+    # Neutral / polite
     - "どんな関係を望んでいますか？"
+    - "どのような関係を求めていますか？"
+    # Casual / natural
     - "どんな感じの関係が理想？"
+    - "どんな関係がいいと思ってる？"
+    # Soft / conversational
     - "どんな付き合い方が好き？"
+    - "理想の付き合い方ってある？"
+    # Slightly more grown-up / composed
+    - "どんな関係性を大切にしたいですか？"
+    - "これから、どんな関係を築きたいですか？"
 
 - prompt: "Can I see[あう] you again[また]?"
   answers:
+    # Neutral / polite
     - "またお会いしてもいいですか？"
+    - "またお会いできたら嬉しいです。"
+    # Casual / natural
     - "また会えたら嬉しいです。"
+    - "また会えるといいな。"
+    # Soft / affectionate
     - "また会いたいな。"
+    - "よかったら、また会いたいです。"
+    # Slightly more grown-up / composed
+    - "機会があれば、またお会いしたいです。"
+    - "もしよければ、近いうちにまたお会いできませんか？"

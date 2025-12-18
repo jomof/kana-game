@@ -138,7 +138,7 @@ export async function makeQuestion(english, japanese) {
     };
 }
 export function parseEnglishString(eng) {
-    const regex = /(\w+)\s*(?:\[([^\]]+)\])?/g;
+    const regex = /([a-zA-Z0-9_']+)\s*(?:\[([^\]]+)\])?/g;
     const parts = [];
     let match;
     while ((match = regex.exec(eng)) !== null) {
