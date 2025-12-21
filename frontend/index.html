@@ -31,6 +31,7 @@
         console.log('Initializing...');
 
         let currentQuestionPrompt = '';
+        let currentAnswerGrammar = {};
         let answerProvided = false;
 
         const fetchNextQuestion = async () => {
@@ -60,8 +61,23 @@
           }
 
           currentQuestionPrompt = data.result.prompt;
+          currentAnswerGrammar = data.result.answerGrammar || {};
           answerProvided = false;
-          return await makeQuestion(data.result.prompt, data.result.answers);
+
+          // Log grammar analysis for debugging
+          if (Object.keys(currentAnswerGrammar).length > 0) {
+            console.log('Grammar analysis for answers:');
+            for (const [answer, grammar] of Object.entries(currentAnswerGrammar)) {
+              console.log(`  "${answer}":`, {
+                formality: grammar.formality,
+                gender: grammar.gender,
+                registers: grammar.registers,
+                is_grammatic: grammar.is_grammatic
+              });
+            }
+          }
+
+          return await makeQuestion(data.result.prompt, data.result.answers, data.result.answerGrammar);
         };
 
         // Load first question

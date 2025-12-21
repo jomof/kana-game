@@ -10,8 +10,20 @@ import json
 import datetime
 
 import kotogram
+from kotogram import SudachiJapaneseParser
 
 app = Flask(__name__)
+
+# Initialize kotogram parser (singleton for efficiency)
+_kotogram_parser = None
+
+def get_kotogram_parser():
+    """Get the singleton kotogram parser instance."""
+    global _kotogram_parser
+    if _kotogram_parser is None:
+        _kotogram_parser = SudachiJapaneseParser()
+    return _kotogram_parser
+
 CORS(app)  # Enable CORS for all routes
 
 
@@ -38,6 +50,33 @@ def get_engine(user):
     if not user:
         user = "default"
     return FsrsSQLiteScheduler.for_user(user, DATA_DIR)
+
+# Grammar analysis cache: maps Japanese text to grammar analysis dict
+GRAMMAR_CACHE = {}
+
+def analyze_grammar(japanese_text):
+    """
+    Analyze the grammar of a Japanese sentence.
+    Returns a dict with grammar analysis results.
+    Results are cached for efficiency.
+    
+    Uses GrammarAnalysis.to_json() for serialization to ensure
+    compatibility with TypeScript GrammarAnalysis.fromJson().
+    """
+    if japanese_text in GRAMMAR_CACHE:
+        return GRAMMAR_CACHE[japanese_text]
+    
+    try:
+        parser = get_kotogram_parser()
+        kotogram_text = parser.japanese_to_kotogram(japanese_text)
+        analysis = kotogram.grammar(kotogram_text)
+        # Use to_json() for proper serialization compatible with TS fromJson()
+        result = json.loads(analysis.to_json())
+        GRAMMAR_CACHE[japanese_text] = result
+        return result
+    except Exception as e:
+        print(f"Error analyzing grammar for '{japanese_text}': {e}")
+        return None
 
 QUESTIONS_CACHE = {
     'timestamp': 0,
@@ -80,7 +119,14 @@ def get_questions():
                                     removed = list(original_answers - augmented_answers)
                                     if added or removed:
                                         print(f"AUGMENT: prompt='{prompt}' added={added} removed={removed}")
+                                    # Run grammar analysis on each answer
+                                    answer_grammar = {}
+                                    for ans in cleaned_answers:
+                                        grammar_result = analyze_grammar(ans)
+                                        if grammar_result:
+                                            answer_grammar[ans] = grammar_result
                                     item['answers'] = cleaned_answers
+                                    item['answerGrammar'] = answer_grammar
                             questions.extend(data)
                         elif isinstance(data, dict) and 'examples' in data:
                             for ex in data['examples']:
@@ -95,9 +141,16 @@ def get_questions():
                                 if added or removed:
                                     print(f"AUGMENT: prompt='{prompt}' added={added} removed={removed}")
                                 if prompt and cleaned_answers:
+                                    # Run grammar analysis on each answer
+                                    answer_grammar = {}
+                                    for ans in cleaned_answers:
+                                        grammar_result = analyze_grammar(ans)
+                                        if grammar_result:
+                                            answer_grammar[ans] = grammar_result
                                     questions.append({
                                         "prompt": prompt,
-                                        "answers": cleaned_answers
+                                        "answers": cleaned_answers,
+                                        "answerGrammar": answer_grammar
                                     })
 
                 except yaml.YAMLError as exc:

@@ -13,6 +13,34 @@ export interface Token {
     pos?: string;
 }
 /**
+ * Grammar analysis for a Japanese answer sentence.
+ * Contains linguistic information about formality, gender, register, etc.
+ */
+export interface GrammarAnalysis {
+    /** Linguistic encoding of the sentence in kotogram format */
+    kotogram: string;
+    /** Formality level of the sentence */
+    formality: 'formal' | 'neutral' | 'casual';
+    /** Raw formality score, approximately -1.0 to 1.0 */
+    formality_score: number;
+    /** Whether formality is context-dependent */
+    formality_is_pragmatic: boolean;
+    /** Gender tendency of the sentence */
+    gender: 'masculine' | 'feminine' | 'neutral';
+    /** Raw gender score, approximately -1.0 to 1.0 */
+    gender_score: number;
+    /** Whether gender is context-dependent */
+    gender_is_pragmatic: boolean;
+    /** Register categories, e.g., ["neutral"], ["danseigo"], ["kansaiben"] */
+    registers: string[];
+    /** Score for each possible register */
+    register_scores: Record<string, number>;
+    /** Whether the sentence is grammatically correct */
+    is_grammatic: boolean;
+    /** Grammaticality confidence score, typically 0.0 to 1.0 */
+    grammaticality_score: number;
+}
+/**
  * A Question contains the English prompt with furigana annotations and
  * multiple acceptable Japanese answers.
  */
@@ -20,6 +48,8 @@ export interface Question {
     english: string;
     japanese: string[];
     parsed: Token[][];
+    /** Map from answer text to its grammar analysis */
+    answerGrammar: Record<string, GrammarAnalysis>;
 }
 /**
  * ParsedEnglishPart represents a word in the English prompt, optionally
@@ -64,6 +94,7 @@ export declare function anyMarked(result: {
 export declare function selectBestGroup(groups: Token[][]): Token[];
 /**
  * Returns true if every non-punctuation token in the array is marked.
+ * Checks for common Japanese punctuation POS tags.
  */
 export declare function isCompleted(tokens: Token[]): boolean;
 /**
@@ -72,16 +103,32 @@ export declare function isCompleted(tokens: Token[]): boolean;
  *
  * @param english - English text with optional furigana annotations
  * @param japanese - Array of acceptable Japanese answers
- * @returns A Question object with tokenized and augmented Japanese
+ * @param answerGrammar - Map from answer text to grammar analysis.
+ *                        Each answer MUST have a corresponding entry with kotogram data.
+ * @returns A Question object with parsed Japanese tokens
  *
  * @example
  * ```ts
- * const q = await makeQuestion('I live[すむ] in Seattle[シアトル].', [
- *   '私 は シアトル に 住んでいます。',
- *   '私 は シアトル に 住んでる。',
- * ]);
+ * const q = await makeQuestion('I live[すむ] in Seattle[シアトル].',
+ *   ['私はシアトルに住んでいます。'],
+ *   {
+ *     '私はシアトルに住んでいます。': {
+ *       kotogram: '⌈ˢ私ᵖpronʳワタシ⌉⌈ˢはᵖparticleʳハ⌉...',
+ *       formality: 'formal',
+ *       formality_score: 0.5,
+ *       gender: 'neutral',
+ *       gender_score: 0,
+ *       formality_is_pragmatic: false,
+ *       gender_is_pragmatic: false,
+ *       registers: ['neutral'],
+ *       register_scores: {},
+ *       is_grammatic: true,
+ *       grammaticality_score: 1.0,
+ *     }
+ *   }
+ * );
  * ```
  */
-export declare function makeQuestion(english: string, japanese: string[]): Promise<Question>;
+export declare function makeQuestion(english: string, japanese: string[], answerGrammar: Record<string, GrammarAnalysis>): Promise<Question>;
 export declare function parseEnglishString(eng: string): ParsedEnglish;
 //# sourceMappingURL=kana-control-logic.d.ts.map
