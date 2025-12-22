@@ -89,9 +89,10 @@ export declare function anyMarked(result: {
  * Selects the "best" token sequence from an array of candidate groups.
  * Criteria:
  *  1. Highest number of tokens with `marked === true`
- *  2. (Tiebreaker) Lowest number of tokens with `marked === false`
+ *  2. (Tiebreaker) Minimize formality_score^2 + gender_score^2 (prefers neutral)
+ *  3. (Tiebreaker) Lexically shortest (surface form length)
  */
-export declare function selectBestGroup(groups: Token[][]): Token[];
+export declare function selectBestGroup(groups: Token[][], answerGrammar?: Record<string, GrammarAnalysis>): Token[];
 /**
  * Returns true if every non-punctuation token in the array is marked.
  * Checks for common Japanese punctuation POS tags.
