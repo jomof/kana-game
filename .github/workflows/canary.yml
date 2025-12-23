@@ -57,14 +57,18 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.13'
-    - name: Start Backend
+    - name: Install Backend Dependencies
       env:
         PYO3_USE_ABI3_FORWARD_COMPATIBILITY: 1
       run: |
-        chmod +x backend.sh
-        ./backend.sh &
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+    - name: Start Backend
+      run: |
+        cd backend
+        python app.py &
         # Wait for port 8080 to be ready
-        timeout 120s bash -c 'until curl -s http://localhost:8080/health > /dev/null; do sleep 1; done'
+        timeout 300s bash -c 'until curl -s http://localhost:8080/health > /dev/null; do sleep 1; done'
         echo "Backend is ready"
 
     # Frontend Setup
