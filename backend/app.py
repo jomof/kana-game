@@ -8,6 +8,14 @@ from pathlib import Path
 from srs_adapter import FsrsSQLiteScheduler
 import json
 import datetime
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 import kotogram
 from kotogram import SudachiJapaneseParser
@@ -43,7 +51,7 @@ def log_transaction(user, request_data, response_data):
             f.write(f"{timestamp} REQUEST: {json.dumps(request_data, ensure_ascii=False)}\n")
             f.write(f"{timestamp} RESPONSE: {json.dumps(response_data, ensure_ascii=False)}\n")
     except Exception as e:
-        print(f"Failed to log transaction: {e}")
+        logger.error(f"Failed to log transaction: {e}")
 
 def get_engine(user):
     """Create a new engine instance for each request to avoid thread issues."""
@@ -75,7 +83,7 @@ def analyze_grammar(japanese_text):
         GRAMMAR_CACHE[japanese_text] = result
         return result
     except Exception as e:
-        print(f"Error analyzing grammar for '{japanese_text}': {e}")
+        logger.error(f"Error analyzing grammar for '{japanese_text}': {e}")
         return None
 
 QUESTIONS_CACHE = {
@@ -99,7 +107,7 @@ def get_questions():
     max_mtime = max(os.path.getmtime(f) for f in files)
     
     if max_mtime > QUESTIONS_CACHE['timestamp']:
-        print("Reloading questions...")
+        logger.info("Reloading questions...")
         questions = []
         for f in files:
             with open(f, 'r', encoding='utf-8') as stream:
@@ -118,7 +126,7 @@ def get_questions():
                                     added = list(augmented_answers - original_answers)
                                     removed = list(original_answers - augmented_answers)
                                     if added or removed:
-                                        print(f"AUGMENT: prompt='{prompt}' added={added} removed={removed}")
+                                        logger.debug(f"AUGMENT: prompt='{prompt}' added={added} removed={removed}")
                                     # Run grammar analysis on each answer
                                     answer_grammar = {}
                                     for ans in cleaned_answers:
@@ -139,7 +147,7 @@ def get_questions():
                                 added = list(augmented_answers - original_answers)
                                 removed = list(original_answers - augmented_answers)
                                 if added or removed:
-                                    print(f"AUGMENT: prompt='{prompt}' added={added} removed={removed}")
+                                    logger.debug(f"AUGMENT: prompt='{prompt}' added={added} removed={removed}")
                                 if prompt and cleaned_answers:
                                     # Run grammar analysis on each answer
                                     answer_grammar = {}
@@ -154,7 +162,7 @@ def get_questions():
                                     })
 
                 except yaml.YAMLError as exc:
-                    print(exc)
+                    logger.error(exc)
         QUESTIONS_CACHE['timestamp'] = max_mtime
         QUESTIONS_CACHE['data'] = questions
         
@@ -177,7 +185,7 @@ def json_rpc():
 
             user = params.get("user") if isinstance(params, dict) else None
             if user:
-                print(f"Request from user: {user}")
+                logger.debug(f"Request from user: {user}")
             
             engine = get_engine(user)
 
@@ -223,7 +231,7 @@ def json_rpc():
             elif method == "provideAnswer":
                 # Expecting params to be a dict or list, but let's handle dict for named params
                 # or just log whatever we get
-                print(f"Received answer: {params}")
+                logger.debug(f"Received answer: {params}")
                 
                 if isinstance(params, dict):
                     question_prompt = params.get("question")
@@ -231,13 +239,13 @@ def json_rpc():
                     
                     if question_prompt:
                         if score is None or score == -1:
-                            print(f"Skipping SRS record for '{question_prompt}' (score: {score})")
+                            logger.debug(f"Skipping SRS record for '{question_prompt}' (score: {score})")
                             engine.bury_card(question_prompt, 15)
-                            print(f"Buried card '{question_prompt}' for 15 minutes")
+                            logger.debug(f"Buried card '{question_prompt}' for 15 minutes")
                         else:
                             # Pass score directly (0-100) to the SRS engine
                             engine.record_answer(question_prompt, int(score))
-                            print(f"Recorded SRS answer for '{question_prompt}': {score}")
+                            logger.debug(f"Recorded SRS answer for '{question_prompt}': {score}")
 
                 response_data = {
                     "jsonrpc": "2.0",

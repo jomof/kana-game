@@ -14,7 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "kana-control": "0.0.13",
-    "kotogram": "0.0.20"
+    "kotogram": "0.0.22"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
