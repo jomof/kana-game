@@ -283,5 +283,15 @@ def health_check():
     return jsonify({"status": "healthy"}), 200
 
 if __name__ == '__main__':
+    # Warm up the questions cache before starting the server.
+    # This ensures heavy processing (augmentation, grammar analysis)
+    # happens during the startup phase rather than on the first request.
+    logger.info("Warming up questions cache...")
+    try:
+        get_questions()
+        logger.info("Warmup complete.")
+    except Exception as e:
+        logger.error(f"Warmup failed: {e}")
+
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=True)
